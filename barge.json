@@ -1,0 +1,8 @@
+{
+  "name": "exprparser",
+  "authors": ["Dénes Fintha <denes.fintha@gmail.com>"],
+  "description": "Very basic expression parser written in C++.",
+  "project_type": "executable",
+  "version": "0.1.0",
+  "cpp_standard": "c++17"
+}
