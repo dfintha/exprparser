@@ -17,7 +17,8 @@ namespace expr {
             ASTERISK,
             CARET,
             OPENING_PARENTHESIS,
-            CLOSING_PARENTHESIS
+            CLOSING_PARENTHESIS,
+            COMMA
         };
 
         type_t type;

@@ -8,6 +8,7 @@ public:
     expr::node_ptr parse();
 
 private:
+    expr::node_ptr parse_function_call();
     expr::node_ptr parse_primary();
     expr::node_ptr parse_unary();
     expr::node_ptr parse_power();
@@ -46,6 +47,36 @@ expression_parser_impl::expression_parser_impl(expr::token_list&& tokens) :
     _position(_tokens.begin())
 {}
 
+expr::node_ptr expression_parser_impl::parse_function_call() {
+    std::string name = previous().content;
+    std::vector<expr::node_ptr> parameters;
+
+    if (_position != _tokens.end())
+        ++_position;
+
+    while (true) {
+        parameters.push_back(parse_term());
+
+        const auto& type = _position->type;
+        const bool is_comma = type == token_type_t::COMMA;
+        const bool is_closing = type == token_type_t::CLOSING_PARENTHESIS;
+
+        if (!is_comma && !is_closing)
+            return nullptr;
+
+        if (_position != _tokens.end())
+            ++_position;
+
+        if (is_closing)
+            break;
+    }
+
+    return expr::make_function_call_node(
+        std::move(name),
+        std::move(parameters)
+    );
+}
+
 expr::node_ptr expression_parser_impl::parse_primary() {
     if (match({token_type_t::BOOLEAN}))
         return expr::make_boolean_literal_node(previous().content);
@@ -53,8 +84,11 @@ expr::node_ptr expression_parser_impl::parse_primary() {
     if (match({token_type_t::NUMBER}))
         return expr::make_number_literal_node(previous().content);
 
-    if (match({token_type_t::IDENTIFIER}))
-        return expr::make_identifier_node(previous().content);
+    if (match({token_type_t::IDENTIFIER})) {
+        if (_position->type != token_type_t::OPENING_PARENTHESIS)
+            return expr::make_identifier_node(previous().content);
+        return parse_function_call();
+    }
 
     if (match({token_type_t::OPENING_PARENTHESIS})) {
         auto expression = parse_term();

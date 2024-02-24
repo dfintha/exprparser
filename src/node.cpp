@@ -42,6 +42,19 @@ namespace expr {
         return result;
     }
 
+    node_ptr make_function_call_node(
+        std::string content,
+        std::vector<node_ptr>&& parameters
+    ) {
+        auto result = std::unique_ptr<node_t>(
+            new node_t{
+                node_t::type_t::FUNCTION_CALL,
+                std::move(content),
+                std::move(parameters)
+            }
+        );
+        return result;
+    }
 }
 
 std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
@@ -56,6 +69,8 @@ std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
             return stream << "BooleanLiteral";
         case expr::node_t::type_t::IDENTIFIER:
             return stream << "Identifier";
+        case expr::node_t::type_t::FUNCTION_CALL:
+            return stream << "FunctionCall";
     }
 }
 

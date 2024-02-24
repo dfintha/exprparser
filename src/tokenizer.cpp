@@ -29,6 +29,9 @@ static std::optional<expr::token_t> extract_single(char current) {
         case ')':
             type = expr::token_t::type_t::CLOSING_PARENTHESIS;
             break;
+        case ',':
+            type = expr::token_t::type_t::COMMA;
+            break;
         default:
             return std::nullopt;
     }

@@ -18,6 +18,7 @@ namespace expr {
             NUMBER,
             BOOLEAN,
             IDENTIFIER,
+            FUNCTION_CALL,
         };
 
         type_t type;
@@ -37,6 +38,11 @@ namespace expr {
         std::string content,
         node_ptr&& left,
         node_ptr&& right
+    );
+
+    node_ptr make_function_call_node(
+        std::string content,
+        std::vector<node_ptr>&& parameters
     );
 }
 

@@ -24,6 +24,8 @@ std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
             return stream << "OpeningParenthesis";
         case expr::token_t::type_t::CLOSING_PARENTHESIS:
             return stream << "ClosingParenthesis";
+        case expr::token_t::type_t::COMMA:
+            return stream << "Comma";
     }
 }
 
