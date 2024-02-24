@@ -1,4 +1,5 @@
 #include "evaluator.h"
+#include "optimizer.h"
 #include "parser.h"
 #include "tokenizer.h"
 
@@ -30,6 +31,9 @@ int main() {
 
     const auto tree = expr::parse(std::move(tokens));
     std::cout << tree << "\n";
+
+    const auto final = expr::optimize(tree);
+    std::cout << final << "\n";
 
     const auto symbols = expr::symbol_table{
         {"pi", 3.141592653589793238},
