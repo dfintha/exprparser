@@ -25,7 +25,7 @@ static std::optional<double> evaluate_child(const expr::node_ptr& child) {
     return expr::evaluate(child, {}, {});
 }
 
-static expr::node_ptr make_optimized_binary_op(
+static expr::optimizer_result make_optimized_binary_op(
     const std::string& operation,
     std::vector<expr::node_ptr> children
 ) {
@@ -97,10 +97,18 @@ static expr::node_ptr make_optimized_binary_op(
     return original;
 }
 
-expr::node_ptr expr::optimize(const expr::node_ptr& root) {
+expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
     std::vector<expr::node_ptr> children;
     for (auto& child : root->children) {
-        children.push_back(expr::optimize(child));
+        if (auto optimized = expr::optimize(child)) {
+            children.push_back(std::move(*optimized));
+        } else {
+            return expr::error {
+                expr::error_code::OPTIMIZER_FAILED_TO_OPTIMIZE_CHILD,
+                0, // TODO: propagate location to nodes
+                "failed to optimize child"
+            };
+        }
     }
 
     if (root->type == expr::node_t::type_t::BINARY_OP) {

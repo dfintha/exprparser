@@ -5,7 +5,10 @@
 #include <cstring>
 #include <optional>
 
-static std::optional<expr::token_t> extract_single(char current) {
+static std::optional<expr::token_t> extract_single(
+    char current,
+    size_t location
+) {
     expr::token_t::type_t type;
     switch (current) {
         case '+':
@@ -35,21 +38,23 @@ static std::optional<expr::token_t> extract_single(char current) {
         default:
             return std::nullopt;
     }
-    return expr::token_t{type, std::string{current}};
+
+    return expr::token_t{type, std::string{current}, location};
 }
 
-static expr::token_t extract_word(std::string&& content) {
+static expr::token_t extract_word(std::string&& content, size_t location) {
     static const std::vector<std::string> booleans = { "true", "false" };
     const auto lookup = std::find(booleans.begin(), booleans.end(), content);
     const bool match = lookup != booleans.end();
     return expr::token_t{
         match ? expr::token_t::type_t::BOOLEAN
               : expr::token_t::type_t::IDENTIFIER,
-        content
+        content,
+        location
     };
 }
 
-static expr::token_list tokenize(const char *expression, size_t length) {
+static expr::tokenizer_result tokenize(const char *expression, size_t length) {
     enum class state_t {
         NORMAL,
         IN_WORD,
@@ -59,19 +64,22 @@ static expr::token_list tokenize(const char *expression, size_t length) {
     expr::token_list result;
     state_t state = state_t::NORMAL;
     std::string content;
+    size_t location = 0;
 
     for (size_t i = 0; i < (length + 1); ++i) {
         const char current = expression[i];
         switch (state) {
             case state_t::NORMAL: {
-                if (auto token = extract_single(current)) {
+                if (auto token = extract_single(current, i + 1)) {
                     result.push_back(*token);
                 } else if (isalpha(current)) {
                     state = state_t::IN_WORD;
                     content = std::string{current};
+                    location = i + 1;
                 } else if (isdigit(current)) {
                     state = state_t::IN_NUMBER;
                     content = std::string{current};
+                    location = i + 1;
                 }
                 break;
             }
@@ -79,7 +87,9 @@ static expr::token_list tokenize(const char *expression, size_t length) {
                 if (isalnum(current) || current == '_') {
                     content += current;
                 } else {
-                    result.push_back(extract_word(std::move(content)));
+                    result.push_back(
+                        extract_word(std::move(content), location)
+                    );
                     state = state_t::NORMAL;
                     --i;
                 }
@@ -92,7 +102,8 @@ static expr::token_list tokenize(const char *expression, size_t length) {
                 } else {
                     result.push_back(expr::token_t{
                         expr::token_t::type_t::NUMBER,
-                        content
+                        content,
+                        location
                     });
                     state = state_t::NORMAL;
                     --i;
@@ -102,15 +113,23 @@ static expr::token_list tokenize(const char *expression, size_t length) {
         }
     }
 
+    if (result.size() == 0) {
+        return expr::error{
+            expr::error_code::TOKENIZER_EMPTY_INPUT,
+            0, // TODO: propagate location to nodes
+            "expression resulted in an empty token stream"
+        };
+    }
+
     return result;
 }
 
 namespace expr {
-    token_list tokenize(const char *expression) {
+    tokenizer_result tokenize(const char *expression) {
         return ::tokenize(expression, strlen(expression));
     }
 
-    token_list tokenize(const std::string& expression) {
+    tokenizer_result tokenize(const std::string& expression) {
         return ::tokenize(expression.c_str(), expression.length());
     }
 }

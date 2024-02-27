@@ -86,7 +86,7 @@ expr::node_ptr expression_parser_impl::parse_primary() {
 
     if (match({token_type_t::IDENTIFIER})) {
         if (_position->type != token_type_t::OPENING_PARENTHESIS)
-            return expr::make_identifier_node(previous().content);
+            return expr::make_variable_node(previous().content);
         return parse_function_call();
     }
 
@@ -152,7 +152,7 @@ expr::node_ptr expression_parser_impl::parse() {
 }
 
 namespace expr {
-    node_ptr parse(token_list&& tokens) {
+    parser_result parse(token_list&& tokens) {
         expression_parser_impl parser(std::move(tokens));
         return parser.parse();
     }

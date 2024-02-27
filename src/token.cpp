@@ -30,7 +30,9 @@ std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
 }
 
 std::ostream& operator<<(std::ostream& stream, const expr::token_t& token) {
-    return stream << token.type << "('" << token.content << "')";
+    return stream << token.type
+                  << "('" << token.content
+                  << "'@" << token.location << ')';
 }
 
 std::ostream& operator<<(std::ostream& stream, const expr::token_list& list) {

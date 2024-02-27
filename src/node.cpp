@@ -15,9 +15,9 @@ namespace expr {
         );
     }
 
-    node_ptr make_identifier_node(std::string content) {
+    node_ptr make_variable_node(std::string content) {
         return std::unique_ptr<node_t>(
-            new node_t{node_t::type_t::IDENTIFIER, std::move(content), {}}
+            new node_t{node_t::type_t::VARIABLE, std::move(content), {}}
         );
     }
 
@@ -67,8 +67,8 @@ std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
             return stream << "NumberLiteral";
         case expr::node_t::type_t::BOOLEAN:
             return stream << "BooleanLiteral";
-        case expr::node_t::type_t::IDENTIFIER:
-            return stream << "Identifier";
+        case expr::node_t::type_t::VARIABLE:
+            return stream << "Variable";
         case expr::node_t::type_t::FUNCTION_CALL:
             return stream << "FunctionCall";
     }

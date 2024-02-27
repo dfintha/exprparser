@@ -23,6 +23,7 @@ namespace expr {
 
         type_t type;
         std::string content;
+        size_t location;
     };
 
     using token_list = std::vector<token_t>;

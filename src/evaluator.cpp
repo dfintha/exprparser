@@ -4,7 +4,8 @@
 #include <cmath>
 #include <functional>
 
-static std::optional<double> call_function(
+static expr::evaluator_result call_function(
+    const std::string& name,
     expr::function_t function,
     const std::vector<expr::node_ptr>& parameters,
     const expr::symbol_table& symbols,
@@ -25,11 +26,20 @@ static std::optional<double> call_function(
             return 0.0;
         }
     );
-    return (failed) ? std::nullopt : function(evaluated);
+    if (failed) {
+        return expr::error{
+            expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
+            0, // TODO: propagate location to nodes
+            std::string("failed to evaluate function arguments for '")
+                + name
+                + "()'"
+        };
+    }
+    return function(evaluated);
 }
 
 namespace expr {
-    std::optional<double> evaluate(
+    evaluator_result evaluate(
         const node_ptr& node,
         const symbol_table& symbols,
         const function_table& functions
@@ -62,7 +72,11 @@ namespace expr {
                     functions
                 );
                 if (!left || !right) {
-                    return std::nullopt;
+                    return error{
+                        error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
+                        0, // TODO: propagate location to nodes
+                        "failed to evaluate operand"
+                    };
                 }
                 const auto& f = binary.at(node->content);
                 return f(*left, *right);
@@ -77,22 +91,37 @@ namespace expr {
                     const auto& f = unary.at(node->content);
                     return f(*operand);
                 }
-                return std::nullopt;
+                return error{
+                    error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
+                    0, // TODO: propagate location to nodes
+                    "failed to evaluate operand"
+                };
             }
             case node_t::type_t::NUMBER: {
                 const auto result = strtod(node->content.c_str(), nullptr);
                 return result;
             }
             case node_t::type_t::BOOLEAN:
-                return node->content == "true" ? 1 : 0;
-            case node_t::type_t::IDENTIFIER:
-                if (symbols.find(node->content) == symbols.end())
-                    return std::nullopt;
+                return node->content == "true" ? 1.0 : 0.0;
+            case node_t::type_t::VARIABLE:
+                if (symbols.find(node->content) == symbols.end()) {
+                    return error{
+                        error_code::EVALUATOR_UNDEFINED_VARIABLE,
+                        0, // TODO: propagate location to nodes
+                        std::string("undefined variable '") + node->content + "'"
+                    };
+                }
                 return symbols.at(node->content);
             case node_t::type_t::FUNCTION_CALL:
-                if (functions.find(node->content) == functions.end())
-                    return std::nullopt;
+                if (functions.find(node->content) == functions.end()) {
+                    return error{
+                        error_code::EVALUATOR_UNDEFINED_FUNCTION,
+                        0, // TODO: propagate location to nodes
+                        std::string("undefined function '") + node->content + "'"
+                    };
+                }
                 return call_function(
+                    node->content,
                     functions.at(node->content),
                     node->children,
                     symbols,

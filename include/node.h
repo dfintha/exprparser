@@ -17,7 +17,7 @@ namespace expr {
             UNARY_OP,
             NUMBER,
             BOOLEAN,
-            IDENTIFIER,
+            VARIABLE,
             FUNCTION_CALL,
         };
 
@@ -30,7 +30,7 @@ namespace expr {
 
     node_ptr make_number_literal_node(std::string content);
 
-    node_ptr make_identifier_node(std::string content);
+    node_ptr make_variable_node(std::string content);
 
     node_ptr make_unary_operator_node(std::string content, node_ptr&& operand);
 

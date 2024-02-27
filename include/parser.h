@@ -2,10 +2,13 @@
 #define EXPRPARSER_PARSER_HEADER
 
 #include "node.h"
+#include "result.h"
 #include "token.h"
 
 namespace expr {
-    node_ptr parse(token_list&& tokens);
+    using parser_result = result<node_ptr, error>;
+
+    parser_result parse(token_list&& tokens);
 }
 
 #endif
