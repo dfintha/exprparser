@@ -6,22 +6,28 @@
 #include <cmath>
 #include <iostream>
 
-static expr::evaluator_result fn_sin(const std::vector<double>& parameters) {
+static expr::evaluator_result fn_sin(
+    const std::vector<double>& parameters,
+    const expr::location_t& location
+) {
     if (parameters.size() != 1) {
         return expr::error{
             expr::error_code::EVALUATOR_WRONG_ARGUMENT_COUNT,
-            0, // TODO: propagate location to nodes
+            location,
             "function sin(x) takes 1 argument"
         };
     }
     return sin(parameters[0]);
 }
 
-static expr::evaluator_result fn_log(const std::vector<double>& parameters) {
+static expr::evaluator_result fn_log(
+    const std::vector<double>& parameters,
+    const expr::location_t& location
+) {
     if (parameters.size() != 2) {
         return expr::error{
             expr::error_code::EVALUATOR_WRONG_ARGUMENT_COUNT,
-            0, // TODO: propagate location to nodes
+            location,
             "function log(x, base) takes 2 arguments"
         };
     }

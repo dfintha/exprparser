@@ -7,6 +7,7 @@
 static expr::evaluator_result call_function(
     const std::string& name,
     expr::function_t function,
+    expr::location_t location,
     const std::vector<expr::node_ptr>& parameters,
     const expr::symbol_table& symbols,
     const expr::function_table& functions
@@ -29,13 +30,13 @@ static expr::evaluator_result call_function(
     if (failed) {
         return expr::error{
             expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
-            0, // TODO: propagate location to nodes
+            location,
             std::string("failed to evaluate function arguments for '")
                 + name
                 + "()'"
         };
     }
-    return function(evaluated);
+    return function(evaluated, location);
 }
 
 namespace expr {
@@ -74,7 +75,7 @@ namespace expr {
                 if (!left || !right) {
                     return error{
                         error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
-                        0, // TODO: propagate location to nodes
+                        node->location,
                         "failed to evaluate operand"
                     };
                 }
@@ -93,7 +94,7 @@ namespace expr {
                 }
                 return error{
                     error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
-                    0, // TODO: propagate location to nodes
+                    node->location,
                     "failed to evaluate operand"
                 };
             }
@@ -107,7 +108,7 @@ namespace expr {
                 if (symbols.find(node->content) == symbols.end()) {
                     return error{
                         error_code::EVALUATOR_UNDEFINED_VARIABLE,
-                        0, // TODO: propagate location to nodes
+                        node->location,
                         std::string("undefined variable '") + node->content + "'"
                     };
                 }
@@ -116,13 +117,14 @@ namespace expr {
                 if (functions.find(node->content) == functions.end()) {
                     return error{
                         error_code::EVALUATOR_UNDEFINED_FUNCTION,
-                        0, // TODO: propagate location to nodes
+                        node->location,
                         std::string("undefined function '") + node->content + "'"
                     };
                 }
                 return call_function(
                     node->content,
                     functions.at(node->content),
+                    node->location,
                     node->children,
                     symbols,
                     functions

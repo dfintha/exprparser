@@ -1,6 +1,8 @@
 #if !defined(EXPRPARSER_NODE_HEADER)
 #define EXPRPARSER_NODE_HEADER
 
+#include "location.h"
+
 #include <iosfwd>
 #include <memory>
 #include <string>
@@ -24,25 +26,34 @@ namespace expr {
         type_t type;
         std::string content;
         std::vector<node_ptr> children;
+        location_t location;
     };
 
-    node_ptr make_boolean_literal_node(std::string content);
+    node_ptr make_boolean_literal_node(
+        std::string content,
+        location_t location
+    );
 
-    node_ptr make_number_literal_node(std::string content);
+    node_ptr make_number_literal_node(std::string content, location_t location);
 
-    node_ptr make_variable_node(std::string content);
+    node_ptr make_variable_node(std::string content, location_t location);
 
-    node_ptr make_unary_operator_node(std::string content, node_ptr&& operand);
+    node_ptr make_unary_operator_node(
+        std::string content,
+        node_ptr&& operand,
+        location_t location);
 
     node_ptr make_binary_operator_node(
         std::string content,
         node_ptr&& left,
-        node_ptr&& right
+        node_ptr&& right,
+        location_t location
     );
 
     node_ptr make_function_call_node(
         std::string content,
-        std::vector<node_ptr>&& parameters
+        std::vector<node_ptr>&& parameters,
+        location_t location
     );
 }
 

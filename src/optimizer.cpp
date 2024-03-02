@@ -27,13 +27,15 @@ static std::optional<double> evaluate_child(const expr::node_ptr& child) {
 
 static expr::optimizer_result make_optimized_binary_op(
     const std::string& operation,
-    std::vector<expr::node_ptr> children
+    std::vector<expr::node_ptr> children,
+    expr::location_t location
 ) {
     auto original = expr::node_ptr{
         new expr::node_t{
             expr::node_t::type_t::BINARY_OP,
             operation,
-            std::move(children)
+            std::move(children),
+            location
         }
     };
 
@@ -41,7 +43,10 @@ static expr::optimizer_result make_optimized_binary_op(
     if (are_all_children_numbers(original->children)) {
         const auto value = expr::evaluate(original, {}, {});
         if (value)
-            return expr::make_number_literal_node(std::to_string(*value));
+            return expr::make_number_literal_node(
+                std::to_string(*value),
+                location
+            );
     }
 
     if (operation == "+" || operation == "-") {
@@ -66,7 +71,8 @@ static expr::optimizer_result make_optimized_binary_op(
             if (value && is_near(*value, -1)) {
                 return expr::make_unary_operator_node(
                     "-",
-                    std::move(original->children[1 - i])
+                    std::move(original->children[1 - i]),
+                    location
                 );
             }
         }
@@ -78,7 +84,7 @@ static expr::optimizer_result make_optimized_binary_op(
 
             // multiplication with 0 results in 0
             if (value && is_near(*value, 0))
-                return expr::make_number_literal_node("0");
+                return expr::make_number_literal_node("0", location);
         }
     }
 
@@ -87,7 +93,7 @@ static expr::optimizer_result make_optimized_binary_op(
 
         // the 0th power of every number is 1
         if (value && is_near(*value, 0))
-            return expr::make_number_literal_node("1");
+            return expr::make_number_literal_node("1", location);
 
         // the 1st power of every number is itself
         if (value && is_near(*value, 1))
@@ -105,24 +111,36 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
         } else {
             return expr::error {
                 expr::error_code::OPTIMIZER_FAILED_TO_OPTIMIZE_CHILD,
-                0, // TODO: propagate location to nodes
+                child->location,
                 "failed to optimize child"
             };
         }
     }
 
     if (root->type == expr::node_t::type_t::BINARY_OP) {
-        return make_optimized_binary_op(root->content, std::move(children));
+        return make_optimized_binary_op(
+            root->content,
+            std::move(children),
+            root->location
+        );
     }
 
     if (root->type == expr::node_t::type_t::UNARY_OP) {
         if (root->children[0]->type == expr::node_t::type_t::NUMBER) {
-            if (const auto value = expr::evaluate(root, {}, {}))
-                return expr::make_number_literal_node(std::to_string(*value));
+            if (const auto value = expr::evaluate(root, {}, {})) {
+                return expr::make_number_literal_node(
+                    std::to_string(*value), root->location
+                );
+            }
         }
     }
 
     return expr::node_ptr{
-        new expr::node_t{root->type, root->content, std::move(children)}
+        new expr::node_t{
+            root->type,
+            root->content,
+            std::move(children),
+            root->location
+        }
     };
 }

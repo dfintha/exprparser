@@ -39,18 +39,19 @@ static std::optional<expr::token_t> extract_single(
             return std::nullopt;
     }
 
-    return expr::token_t{type, std::string{current}, location};
+    return expr::token_t{type, std::string{current}, {location, location + 1}};
 }
 
 static expr::token_t extract_word(std::string&& content, size_t location) {
     static const std::vector<std::string> booleans = { "true", "false" };
     const auto lookup = std::find(booleans.begin(), booleans.end(), content);
     const bool match = lookup != booleans.end();
+    const size_t length = content.length();
     return expr::token_t{
         match ? expr::token_t::type_t::BOOLEAN
               : expr::token_t::type_t::IDENTIFIER,
-        content,
-        location
+        std::move(content),
+        {location, location + length}
     };
 }
 
@@ -103,7 +104,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
                     result.push_back(expr::token_t{
                         expr::token_t::type_t::NUMBER,
                         content,
-                        location
+                        {location, location + content.length()}
                     });
                     state = state_t::NORMAL;
                     --i;
@@ -116,7 +117,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
     if (result.size() == 0) {
         return expr::error{
             expr::error_code::TOKENIZER_EMPTY_INPUT,
-            0, // TODO: propagate location to nodes
+            expr::location_t{0, 0},
             "expression resulted in an empty token stream"
         };
     }

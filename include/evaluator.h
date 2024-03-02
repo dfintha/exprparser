@@ -9,7 +9,11 @@
 
 namespace expr {
     using evaluator_result = result<double, error>;
-    using function_t = evaluator_result (*)(const std::vector<double>&);
+    using function_t = evaluator_result (*)(
+        const std::vector<double>&,
+        const expr::location_t&
+    );
+
     using symbol_table = std::unordered_map<std::string, double>;
     using function_table = std::unordered_map<std::string, function_t>;
 

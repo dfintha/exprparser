@@ -1,6 +1,8 @@
 #if !defined(EXPRPARSER_TOKEN_HEADER)
 #define EXPRPARSER_TOKEN_HEADER
 
+#include "location.h"
+
 #include <iosfwd>
 #include <string>
 #include <vector>
@@ -23,7 +25,7 @@ namespace expr {
 
         type_t type;
         std::string content;
-        size_t location;
+        location_t location;
     };
 
     using token_list = std::vector<token_t>;

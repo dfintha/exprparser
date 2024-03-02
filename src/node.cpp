@@ -3,27 +3,52 @@
 #include <iostream>
 
 namespace expr {
-    node_ptr make_boolean_literal_node(std::string content) {
+    node_ptr make_boolean_literal_node(
+        std::string content,
+        location_t location
+    ) {
         return std::unique_ptr<node_t>(
-            new node_t{node_t::type_t::BOOLEAN, std::move(content), {}}
+            new node_t{
+                node_t::type_t::BOOLEAN,
+                std::move(content),
+                {},
+                location
+            }
         );
     }
 
-    node_ptr make_number_literal_node(std::string content) {
+    node_ptr make_number_literal_node(
+        std::string content,
+        location_t location
+    ) {
         return std::unique_ptr<node_t>(
-            new node_t{node_t::type_t::NUMBER, std::move(content), {}}
+            new node_t{node_t::type_t::NUMBER, std::move(content), {}, location}
         );
     }
 
-    node_ptr make_variable_node(std::string content) {
+    node_ptr make_variable_node(std::string content, location_t location) {
         return std::unique_ptr<node_t>(
-            new node_t{node_t::type_t::VARIABLE, std::move(content), {}}
+            new node_t{
+                node_t::type_t::VARIABLE,
+                std::move(content),
+                {},
+                location
+            }
         );
     }
 
-    node_ptr make_unary_operator_node(std::string content, node_ptr&& operand) {
+    node_ptr make_unary_operator_node(
+        std::string content,
+        node_ptr&& operand,
+        location_t location
+    ) {
         node_ptr result = std::unique_ptr<node_t>(
-            new node_t{node_t::type_t::UNARY_OP, std::move(content), {}}
+            new node_t{
+                node_t::type_t::UNARY_OP,
+                std::move(content),
+                {},
+                location
+            }
         );
         result->children.push_back(std::move(operand));
         return result;
@@ -32,10 +57,16 @@ namespace expr {
     node_ptr make_binary_operator_node(
         std::string content,
         node_ptr&& left,
-        node_ptr&& right
+        node_ptr&& right,
+        location_t location
     ) {
         node_ptr result = std::unique_ptr<node_t>(
-            new node_t{node_t::type_t::BINARY_OP, std::move(content), {}}
+            new node_t{
+                node_t::type_t::BINARY_OP,
+                std::move(content),
+                {},
+                location
+            }
         );
         result->children.push_back(std::move(left));
         result->children.push_back(std::move(right));
@@ -44,13 +75,15 @@ namespace expr {
 
     node_ptr make_function_call_node(
         std::string content,
-        std::vector<node_ptr>&& parameters
+        std::vector<node_ptr>&& parameters,
+        location_t location
     ) {
         auto result = std::unique_ptr<node_t>(
             new node_t{
                 node_t::type_t::FUNCTION_CALL,
                 std::move(content),
-                std::move(parameters)
+                std::move(parameters),
+                location
             }
         );
         return result;
@@ -76,7 +109,10 @@ std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
 
 std::ostream& operator<<(std::ostream& stream, const expr::node_ptr& node) {
     static std::string indent = "";
-    stream << indent << node->type << '(' << node->content << ')' << std::endl;
+    stream << indent << node->type
+           << "('" << node->content
+           << "'@" << node->location.begin << '-'
+           << node->location.end - 1 << ')' << std::endl;
     indent += "  ";
     for (const auto& child : node->children) {
         stream << child;

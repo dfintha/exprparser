@@ -1,6 +1,8 @@
 #if !defined(EXPRPARSER_RESULT_HEADER)
 #define EXPRPARSER_RESULT_HEADER
 
+#include "location.h"
+
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -25,7 +27,7 @@ namespace expr {
 
     struct error {
         error_code code;
-        size_t location;
+        expr::location_t location;
         std::string description;
     };
 
