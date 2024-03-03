@@ -85,8 +85,8 @@ expr::node_ptr expression_parser_impl::parse_function_call() {
 
 expr::node_ptr expression_parser_impl::parse_primary() {
     if (match({token_type_t::BOOLEAN}))
-        return expr::make_boolean_literal_node(
-            previous().content,
+        return expr::make_number_literal_node(
+            previous().content == "true" ? "1" : "0",
             previous().location
         );
 
