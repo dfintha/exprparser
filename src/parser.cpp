@@ -178,6 +178,17 @@ expr::node_ptr expression_parser_impl::parse() {
 namespace expr {
     parser_result parse(token_list&& tokens) {
         expression_parser_impl parser(std::move(tokens));
-        return parser.parse();
+        auto result = parser.parse();
+        if (result == nullptr) {
+            return expr::error {
+                expr::error_code::PARSER_GENERAL_ERROR,
+                expr::location_t{
+                    tokens.front().location.begin,
+                    tokens.back().location.end
+                },
+                "unknown error occurred during token list parsing"
+            };
+        }
+        return result;
     }
 }
