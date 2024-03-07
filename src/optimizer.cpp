@@ -22,7 +22,9 @@ static bool are_all_children_numbers(
 static std::optional<double> evaluate_child(const expr::node_ptr& child) {
     if (child->type != expr::node_t::type_t::NUMBER)
         return std::nullopt;
-    return expr::evaluate(child, {}, {});
+    if (auto evaluated = expr::evaluate(child, {}, {}))
+        return *evaluated;
+    return std::nullopt;
 }
 
 static expr::optimizer_result make_optimized_binary_op(
