@@ -34,55 +34,72 @@ static expr::evaluator_result fn_log(
     return log(parameters[0]) / log(parameters[1]);
 }
 
+template <typename ProcessFn, typename... InputT>
+auto process_and_print(
+    const char *action,
+    ProcessFn process,
+    InputT&&... input
+) {
+    auto result = process(std::forward<InputT>(input)...);
+    if (!result) {
+        std::cout << "failed to " << action << ": "
+                  << result.error().description
+                  << '\n';
+    }
+    std::cout << *result << "\n\n";
+    return std::move(result);
+}
+
 int main() {
     std::cout << "please enter an expression: ";
     std::string expression;
     std::getline(std::cin, expression);
     std::cout << "\n";
 
-    auto tokens = expr::tokenize(expression);
-    if (!tokens) {
-        std::cout << "failed to tokenize input: "
-                  << tokens.error().description
-                  << '\n';
+    using tokenize_string_fn = expr::tokenizer_result (*)(const std::string&);
+    auto tokens = process_and_print<tokenize_string_fn>(
+        "tokenize input",
+        expr::tokenize,
+        expression
+    );
+    if (!tokens)
         return 1;
-    }
-    std::cout << *tokens << "\n\n";
 
-    const auto tree = expr::parse(std::move(*tokens));
-    if (!tree) {
-        std::cout << "failed to parse tokens: "
-                  << tree.error().description
-                  << '\n';
-    }
-    std::cout << *tree << '\n';
+    auto parsed = process_and_print(
+        "parse tokens",
+        expr::parse,
+        std::move(*tokens)
+    );
+    if (!parsed)
+        return 2;
 
-    const auto final = expr::optimize(*tree);
-    if (!final) {
-        std::cout << "failed to optimize expression tree: "
-                  << final.error().description
-                  << '\n';
-        return 1;
-    }
-    std::cout << *final << '\n';
+    auto optimized = process_and_print(
+        "optimize expression tree",
+        expr::optimize,
+        *parsed
+    );
+    if (!optimized)
+        return 3;
 
     const auto symbols = expr::symbol_table{
         {"pi", 3.141592653589793238},
         {"e", 2.718281828459045235}
     };
+
     const auto functions = expr::function_table{
         {"sin", fn_sin},
         {"log", fn_log}
     };
 
-    const auto result = expr::evaluate(*tree, symbols, functions);
-    if (!result) {
-        std::cout << "failed to evaluate expression tree: "
-                  << result.error().description
-                  << '\n';
-        return 1;
-    }
-    std::cout << *result << "\n";
+    auto result = process_and_print(
+        "evaluate expression tree",
+        expr::evaluate,
+        *optimized,
+        symbols,
+        functions
+    );
+    if (!result)
+        return 4;
 
     return 0;
 }
