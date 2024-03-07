@@ -73,7 +73,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
             case state_t::NORMAL: {
                 if (auto token = extract_single(current, i + 1)) {
                     result.push_back(*token);
-                } else if (isalpha(current)) {
+                } else if (isalpha(current) || current == '_') {
                     state = state_t::IN_WORD;
                     content = std::string{current};
                     location = i + 1;
