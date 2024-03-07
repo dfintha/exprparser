@@ -46,18 +46,13 @@ auto process_and_print(
                   << result.error().description
                   << '\n';
     }
-    std::cout << *result << "\n\n";
+    std::cout << *result << "\n";
     return std::move(result);
 }
 
-int main() {
-    std::cout << "please enter an expression: ";
-    std::string expression;
-    std::getline(std::cin, expression);
-    std::cout << "\n";
-
-    using tokenize_string_fn = expr::tokenizer_result (*)(const std::string&);
-    auto tokens = process_and_print<tokenize_string_fn>(
+static int process_expression(const std::string& expression) {
+    using tokenize_fn = expr::tokenizer_result (*)(const std::string&);
+    auto tokens = process_and_print<tokenize_fn>(
         "tokenize input",
         expr::tokenize,
         expression
@@ -101,5 +96,27 @@ int main() {
     if (!result)
         return 4;
 
-    return 0;
+    return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv) {
+    --argc, ++argv;
+
+    if (argc == 0) {
+        std::cout << "please enter an expression: ";
+        std::string expression;
+        std::getline(std::cin, expression);
+        std::cout << "\n";
+        return process_expression(expression);
+    }
+
+    for (int i = 0; i < argc; ++i) {
+        std::cout << '"' << argv[i] << "\"\n\n";
+        const int result = process_expression(std::string(argv[i]));
+        if (result != EXIT_SUCCESS)
+            return result;
+        std::cout << "\n\n";
+    }
+
+    return EXIT_SUCCESS;
 }
