@@ -4,6 +4,8 @@
 #include <cmath>
 #include <functional>
 
+using namespace std::literals;
+
 static expr::evaluator_result call_function(
     const std::string& name,
     expr::function_t function,
@@ -31,9 +33,7 @@ static expr::evaluator_result call_function(
         return expr::error{
             expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
             location,
-            std::string("failed to evaluate function arguments for '")
-                + name
-                + "()'"
+            "failed to evaluate function arguments for '"s + name + "()'"
         };
     }
     return function(evaluated, location);
@@ -109,7 +109,7 @@ namespace expr {
                     return error{
                         error_code::EVALUATOR_UNDEFINED_VARIABLE,
                         node->location,
-                        std::string("undefined variable '") + node->content + "'"
+                        "undefined variable '"s + node->content + "'"
                     };
                 }
                 return symbols.at(node->content);
@@ -118,7 +118,7 @@ namespace expr {
                     return error{
                         error_code::EVALUATOR_UNDEFINED_FUNCTION,
                         node->location,
-                        std::string("undefined function '") + node->content + "'"
+                        "undefined function '"s + node->content + "'"
                     };
                 }
                 return call_function(
