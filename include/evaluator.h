@@ -21,6 +21,8 @@ namespace expr {
         const node_ptr& node,
         const symbol_table& symbols,
         const function_table& functions);
+
+    std::string to_expression_string(const node_ptr& root);
 }
 
 #endif

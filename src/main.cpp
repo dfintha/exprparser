@@ -68,6 +68,10 @@ static int process_expression(const std::string& expression) {
     if (!parsed)
         return 2;
 
+    std::cout << "recreated expression string from parsed syntax tree: '"
+              << expr::to_expression_string(*parsed)
+              << "'\n\n";
+
     auto optimized = process_and_print(
         "optimize expression tree",
         expr::optimize,
@@ -75,6 +79,10 @@ static int process_expression(const std::string& expression) {
     );
     if (!optimized)
         return 3;
+
+    std::cout << "recreated expression string from optimized syntax tree: '"
+              << expr::to_expression_string(*optimized)
+              << "'\n\n";
 
     const auto symbols = expr::symbol_table{
         {"pi", 3.141592653589793238},

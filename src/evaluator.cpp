@@ -39,6 +39,62 @@ static expr::evaluator_result call_function(
     return function(evaluated, location);
 }
 
+static int get_precedence_score(const expr::node_ptr& node) {
+    const bool is_plus_minus = node->content == "+" || node->content == "-";
+    const bool is_asterisk_slash = node->content == "*" || node->content == "/";
+    switch (node->type) {
+        case expr::node_t::type_t::BINARY_OP:
+            return is_plus_minus ? 1 : (is_asterisk_slash ? 2 : 3);
+        case expr::node_t::type_t::FUNCTION_CALL:
+            return 4;
+        case expr::node_t::type_t::UNARY_OP:
+            return 5;
+        case expr::node_t::type_t::NUMBER:
+        case expr::node_t::type_t::BOOLEAN:
+        case expr::node_t::type_t::VARIABLE:
+            return 6;
+    }
+}
+
+static std::string binary_op_to_expression_string(const expr::node_ptr& node) {
+    const auto left_precedence = get_precedence_score(node->children[0]);
+    const auto right_precedence = get_precedence_score(node->children[1]);
+    const auto parent_precedence = get_precedence_score(node);
+    const bool left_lesser = left_precedence < parent_precedence;
+    const bool right_lesser = right_precedence < parent_precedence;
+    return (left_lesser ? "(" : "")
+        + expr::to_expression_string(node->children[0])
+        + (left_lesser ? ")" : "")
+        + " " + node->content + " "
+        + (right_lesser ? "(" : "")
+        + expr::to_expression_string(node->children[1])
+        + (right_lesser ? ")" : "");
+}
+
+static std::string unary_op_to_expression_string(const expr::node_ptr& node) {
+    const bool parent_precedence = get_precedence_score(node);
+    const bool child_precedence = get_precedence_score(node->children[0]);
+    const bool child_lesser = (child_precedence < parent_precedence);
+    return node->content
+        + (child_lesser ? "(" : "")
+        + expr::to_expression_string(node->children[0])
+        + (child_lesser ? ")" : "");
+}
+
+static std::string function_call_to_expression_string(
+    const expr::node_ptr& node
+) {
+    std::string result = node->content + "(";
+    bool done = false;
+    auto it = node->children.begin();
+    while (!done) {
+        result += expr::to_expression_string(*it++);
+        done = (it == node->children.end());
+        result += done ? ")" : ", ";
+    }
+    return result;
+}
+
 namespace expr {
     evaluator_result evaluate(
         const node_ptr& node,
@@ -129,6 +185,21 @@ namespace expr {
                     symbols,
                     functions
                 );
+        }
+    }
+
+    std::string to_expression_string(const node_ptr& root) {
+        switch (root->type) {
+            case expr::node_t::type_t::BINARY_OP:
+                return binary_op_to_expression_string(root);
+            case expr::node_t::type_t::UNARY_OP:
+                return unary_op_to_expression_string(root);
+            case expr::node_t::type_t::NUMBER:
+            case expr::node_t::type_t::BOOLEAN:
+            case expr::node_t::type_t::VARIABLE:
+                return root->content;
+            case expr::node_t::type_t::FUNCTION_CALL:
+                return function_call_to_expression_string(root);
         }
     }
 }
