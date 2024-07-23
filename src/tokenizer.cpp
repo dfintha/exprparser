@@ -133,4 +133,8 @@ namespace expr {
     tokenizer_result tokenize(const std::string& expression) {
         return ::tokenize(expression.c_str(), expression.length());
     }
+
+    tokenizer_result tokenize(std::string_view expression) {
+        return ::tokenize(expression.data(), expression.length());
+    }
 }
