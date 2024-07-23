@@ -12,6 +12,7 @@ namespace expr {
     enum error_code : unsigned {
         TOKENIZER_CODES_BEGIN = 1000,
         TOKENIZER_EMPTY_INPUT = 1001,
+        TOKENIZER_MULTIPLE_DECIMAL_DOT = 1002,
 
         PARSER_CODES_BEGIN = 2000,
         PARSER_GENERAL_ERROR = 2001,

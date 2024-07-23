@@ -115,6 +115,12 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
             case state_t::IN_NUMBER: {
                 if (is_valid_numeric_part(content, current)) {
                     content += current;
+                } else if (current == '.') {
+                    return expr::error{
+                        expr::error_code::TOKENIZER_MULTIPLE_DECIMAL_DOT,
+                        expr::location_t{i + 1, i + 1},
+                        "multiple decimal dots present in numeric literal"
+                    };
                 } else {
                     result.push_back(expr::token_t{
                         expr::token_t::type_t::NUMBER,
