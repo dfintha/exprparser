@@ -175,9 +175,10 @@ namespace expr {
                 return symbols.at(node->content);
             case node_t::type_t::FUNCTION_CALL:
                 if (functions.find(node->content) == functions.end()) {
+                    const auto& where = node->location.begin;
                     return error{
                         error_code::EVALUATOR_UNDEFINED_FUNCTION,
-                        node->location,
+                        location_t{where, where + node->content.length() - 1},
                         "undefined function '"s + node->content + "'"
                     };
                 }
