@@ -1,38 +1,10 @@
 #include "evaluator.h"
+#include "functions.h"
 #include "optimizer.h"
 #include "parser.h"
 #include "tokenizer.h"
 
-#include <cmath>
 #include <iostream>
-
-static expr::evaluator_result fn_sin(
-    const std::vector<double>& parameters,
-    const expr::location_t& location
-) {
-    if (parameters.size() != 1) {
-        return expr::error{
-            expr::error_code::EVALUATOR_WRONG_ARGUMENT_COUNT,
-            location,
-            "function sin(x) takes 1 argument"
-        };
-    }
-    return sin(parameters[0]);
-}
-
-static expr::evaluator_result fn_log(
-    const std::vector<double>& parameters,
-    const expr::location_t& location
-) {
-    if (parameters.size() != 2) {
-        return expr::error{
-            expr::error_code::EVALUATOR_WRONG_ARGUMENT_COUNT,
-            location,
-            "function log(x, base) takes 2 arguments"
-        };
-    }
-    return log(parameters[0]) / log(parameters[1]);
-}
 
 template <typename ProcessFn, typename... InputT>
 auto process_and_print(
@@ -46,7 +18,7 @@ auto process_and_print(
                   << result.error().description
                   << '\n';
     }
-    std::cout << *result << "\n";
+    std::cout << *result << '\n';
     return std::move(result);
 }
 
@@ -89,17 +61,12 @@ static int process_expression(const std::string& expression) {
         {"e", 2.718281828459045235}
     };
 
-    const auto functions = expr::function_table{
-        {"sin", fn_sin},
-        {"log", fn_log}
-    };
-
     auto result = process_and_print(
         "evaluate expression tree",
         expr::evaluate,
         *optimized,
         symbols,
-        functions
+        expr::functions()
     );
     if (!result)
         return 4;
@@ -111,10 +78,16 @@ int main(int argc, char **argv) {
     --argc, ++argv;
 
     if (argc == 0) {
+        std::cout << "available built-in functions are: ";
+        for (const auto& [name, _] : expr::functions()) {
+            std::cout << name << ' ';
+        }
+        std::cout << "\n\n";
+
         std::cout << "please enter an expression: ";
         std::string expression;
         std::getline(std::cin, expression);
-        std::cout << "\n";
+        std::cout << '\n';
         return process_expression(expression);
     }
 

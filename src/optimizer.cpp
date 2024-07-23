@@ -4,6 +4,7 @@
 #include <cfloat>
 #include <cmath>
 #include <iostream>
+#include <optional>
 
 static bool is_near(double lhs, double rhs) {
     return std::fabs(lhs - rhs) <= DBL_EPSILON;

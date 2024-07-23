@@ -3,10 +3,11 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <optional>
 
 using namespace std::literals;
 
-static expr::evaluator_result call_function(
+static expr::function_result call_function(
     const std::string& name,
     expr::function_t function,
     expr::location_t location,
