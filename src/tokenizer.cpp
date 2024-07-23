@@ -5,6 +5,22 @@
 #include <cstring>
 #include <optional>
 
+static bool is_valid_numeric_part(const std::string& content, char current) {
+    if (content == "0" && (current == 'x' || current == 'b'))
+        return true;
+
+    if (content.substr(0, 2) == "0b" && (current == '0' || current == '1'))
+        return true;
+
+    if (content.substr(0, 2) == "0x" && isxdigit(current))
+        return true;
+
+    if (content.find('.') == std::string::npos && current == '.')
+        return true;
+
+    return isdigit(current);
+}
+
 static std::optional<expr::token_t> extract_single(
     char current,
     size_t location
@@ -97,8 +113,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
                 break;
             }
             case state_t::IN_NUMBER: {
-                const bool decimal = (content.find('.') != std::string::npos);
-                if (isdigit(current) || (current == '.' && !decimal)) {
+                if (is_valid_numeric_part(content, current)) {
                     content += current;
                 } else {
                     result.push_back(expr::token_t{

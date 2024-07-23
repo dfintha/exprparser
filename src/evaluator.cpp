@@ -156,8 +156,11 @@ namespace expr {
                 };
             }
             case node_t::type_t::NUMBER: {
-                const auto result = strtod(node->content.c_str(), nullptr);
-                return result;
+                const auto& content = node->content;
+                const bool is_binary = content.substr(0, 2) == "0b";
+                return is_binary
+                    ? double(strtol(content.substr(2).c_str(), nullptr, 2))
+                    : strtod(content.c_str(), nullptr);
             }
             case node_t::type_t::BOOLEAN:
                 return node->content == "true" ? 1.0 : 0.0;
