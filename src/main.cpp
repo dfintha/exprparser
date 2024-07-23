@@ -16,7 +16,11 @@ auto process_and_print(
     if (!result) {
         std::cout << "failed to " << action << ": "
                   << result.error().description
-                  << '\n';
+                  << " (at location "
+                  << result.error().location.begin
+                  << "-"
+                  << result.error().location.end
+                  << ")\n";
     }
     std::cout << *result << '\n';
     return std::move(result);
