@@ -52,25 +52,46 @@ static expr::optimizer_result make_optimized_binary_op(
             );
     }
 
-    if (operation == "+" || operation == "-") {
+    if (operation == "+") {
         for (size_t i = 0; i < original->children.size(); ++i) {
             const auto value = evaluate_child(original->children[i]);
 
-            // addition or subtraction with 0 is a no-op
+            // addition with 0 is a no-op (both ways)
             if (value && is_near(*value, 0))
                 return std::move(original->children[1 - i]);
         }
     }
 
-    if (operation == "*" || operation == "/") {
+    if (operation == "-") {
+        const auto value_0 = evaluate_child(original->children[0]);
+        const auto value_1 = evaluate_child(original->children[1]);
+
+        // subtraction of 0 is a no-op
+        if (value_1 && is_near(*value_1, 0))
+            return std::move(original->children[0]);
+
+        // subtraction from 0 is a sign change
+        if (value_0 && is_near(*value_0, 0))
+            return expr::make_unary_operator_node(
+                "-",
+                std::move(original->children[1]),
+                location
+            );
+    }
+
+    if (operation == "*") {
         for (size_t i = 0; i < original->children.size(); ++i) {
             const auto value = evaluate_child(original->children[i]);
 
-            // multiplication or division with 1 is a no-op
+            // multiplication with 0 results in 0
+            if (value && is_near(*value, 0))
+                return expr::make_number_literal_node("0", location);
+
+            // multiplication with 1 is a no-op (both ways)
             if (value && is_near(*value, 1))
                 return std::move(original->children[1 - i]);
 
-            // multiplication or division with -1 is a sign change
+            // multiplication with -1 is a sign change (both ways)
             if (value && is_near(*value, -1)) {
                 return expr::make_unary_operator_node(
                     "-",
@@ -81,13 +102,25 @@ static expr::optimizer_result make_optimized_binary_op(
         }
     }
 
-    if (operation == "*") {
-        for (size_t i = 0; i < original->children.size(); ++i) {
-            const auto value = evaluate_child(original->children[i]);
+    if (operation == "/") {
+        const auto value_0 = evaluate_child(original->children[0]);
+        const auto value_1 = evaluate_child(original->children[1]);
 
-            // multiplication with 0 results in 0
-            if (value && is_near(*value, 0))
-                return expr::make_number_literal_node("0", location);
+        // division of 0 is always 0
+        if (value_0 && is_near(*value_0, 0))
+            return expr::make_number_literal_node("0", location);
+
+        // division with 1 is a no-op
+        if (value_1 && is_near(*value_1, 1))
+            return std::move(original->children[0]);
+
+        // division with -1 is a sign change
+        if (value_1 && is_near(*value_1, -1)) {
+            return expr::make_unary_operator_node(
+                "-",
+                std::move(original->children[0]),
+                location
+            );
         }
     }
 
