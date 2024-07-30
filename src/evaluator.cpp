@@ -55,6 +55,9 @@ static int get_precedence_score(const expr::node_ptr& node) {
         case expr::node_t::type_t::VARIABLE:
             return 6;
     }
+
+    // Unreachable
+    return 0;
 }
 
 static std::string binary_op_to_expression_string(const expr::node_ptr& node) {
@@ -192,6 +195,13 @@ namespace expr {
                     functions
                 );
         }
+
+        // Unreachable
+        return error{
+            error_code::EVALUATOR_REACHED_UNREACHABLE_CODE_PATH,
+            location_t{0, 0},
+            "the evaluator has reached a supposedly unreachable code path"
+        };
     }
 
     std::string to_expression_string(const node_ptr& root) {
@@ -207,5 +217,8 @@ namespace expr {
             case expr::node_t::type_t::FUNCTION_CALL:
                 return function_call_to_expression_string(root);
         }
+
+        // Unreachable
+        return "";
     }
 }
