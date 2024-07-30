@@ -22,8 +22,8 @@ static double sgn(double x) {
                     return expr::error{                                        \
                         expr::error_code::EVALUATOR_WRONG_ARGUMENT_COUNT,      \
                         location,                                              \
-                        "function " #NAME "(" ARGLIST ") takes "               \
-                        #N_PARAMS " argument(s)"                               \
+                        "Function " #NAME "(" ARGLIST ") takes "               \
+                        #N_PARAMS " argument(s)."                              \
                     };                                                         \
                 }                                                              \
                 return IMPLEMENTATION;                                         \

@@ -34,7 +34,7 @@ static expr::function_result call_function(
         return expr::error{
             expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
             location,
-            "failed to evaluate function arguments for '"s + name + "()'"
+            "Failed to evaluate function arguments for '"s + name + "()'."
         };
     }
     return function(evaluated, location);
@@ -137,7 +137,7 @@ namespace expr {
                     return error{
                         error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
                         node->location,
-                        "failed to evaluate operand"
+                        "Failed to evaluate operand."
                     };
                 }
                 const auto& f = binary.at(node->content);
@@ -156,7 +156,7 @@ namespace expr {
                 return error{
                     error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
                     node->location,
-                    "failed to evaluate operand"
+                    "Failed to evaluate operand."
                 };
             }
             case node_t::type_t::NUMBER: {
@@ -173,7 +173,7 @@ namespace expr {
                     return error{
                         error_code::EVALUATOR_UNDEFINED_VARIABLE,
                         node->location,
-                        "undefined variable '"s + node->content + "'"
+                        "Undefined variable '"s + node->content + "'."
                     };
                 }
                 return symbols.at(node->content);
@@ -183,7 +183,7 @@ namespace expr {
                     return error{
                         error_code::EVALUATOR_UNDEFINED_FUNCTION,
                         location_t{where, where + node->content.length() - 1},
-                        "undefined function '"s + node->content + "'"
+                        "Undefined function '"s + node->content + "'."
                     };
                 }
                 return call_function(
@@ -200,7 +200,7 @@ namespace expr {
         return error{
             error_code::EVALUATOR_REACHED_UNREACHABLE_CODE_PATH,
             location_t{0, 0},
-            "the evaluator has reached a supposedly unreachable code path"
+            "The evaluator has reached a supposedly unreachable code path."
         };
     }
 

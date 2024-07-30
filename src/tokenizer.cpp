@@ -134,7 +134,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
                     return expr::error{
                         expr::error_code::TOKENIZER_MULTIPLE_DECIMAL_DOT,
                         expr::location_t{i + 1, i + 1},
-                        "multiple decimal dots present in numeric literal"
+                        "Multiple decimal dots present in numeric literal."
                     };
                 } else {
                     result.push_back(expr::token_t{
@@ -154,7 +154,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
         return expr::error{
             expr::error_code::TOKENIZER_EMPTY_INPUT,
             expr::location_t{0, 0},
-            "expression resulted in an empty token stream"
+            "Expression resulted in an empty token stream."
         };
     }
 
