@@ -15,7 +15,19 @@ static bool is_valid_numeric_part(const std::string& content, char current) {
     if (content.substr(0, 2) == "0x" && isxdigit(current))
         return true;
 
-    if (content.find('.') == std::string::npos && current == '.')
+    const bool has_lowercase_e = content.find('e') != std::string::npos;
+    const bool has_uppercase_e = content.find('E') != std::string::npos;
+    const bool has_any_e = has_lowercase_e  || has_uppercase_e;
+
+    if (!has_any_e) {
+        if (current == 'e' || current == 'E')
+            return true;
+
+        if (content.find('.') == std::string::npos && current == '.')
+            return true;
+    }
+
+    if (has_any_e && (current == '-' || current == '+'))
         return true;
 
     return isdigit(current);
