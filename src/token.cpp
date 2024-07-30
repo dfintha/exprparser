@@ -29,6 +29,9 @@ std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
         case expr::token_t::type_t::COMMA:
             return stream << "Comma";
     }
+
+    // Unreachable
+    return stream;
 }
 
 std::ostream& operator<<(std::ostream& stream, const expr::token_t& token) {

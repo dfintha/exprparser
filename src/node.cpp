@@ -105,6 +105,9 @@ std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
         case expr::node_t::type_t::FUNCTION_CALL:
             return stream << "FunctionCall";
     }
+
+    // Unreachable
+    return stream;
 }
 
 std::ostream& operator<<(std::ostream& stream, const expr::node_ptr& node) {
