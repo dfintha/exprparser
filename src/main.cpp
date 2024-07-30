@@ -83,8 +83,8 @@ int main(int argc, char **argv) {
 
     if (argc == 0) {
         std::cout << "available built-in functions are: ";
-        for (const auto& [name, _] : expr::functions()) {
-            std::cout << name << ' ';
+        for (const auto& [_, definition] : expr::functions()) {
+            std::cout << definition.signature << ' ';
         }
         std::cout << "\n\n";
 

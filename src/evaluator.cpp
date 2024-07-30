@@ -185,7 +185,7 @@ namespace expr {
                 }
                 return call_function(
                     node->content,
-                    functions.at(node->content),
+                    functions.at(node->content).implementation,
                     node->location,
                     node->children,
                     symbols,

@@ -16,7 +16,13 @@ namespace expr {
         const expr::location_t&
     );
 
-    using function_table = std::unordered_map<std::string, function_t>;
+    struct function_definition_t {
+        function_t implementation;
+        std::string signature;
+    };
+
+    using function_table =
+        std::unordered_map<std::string, function_definition_t>;
 
     const function_table& functions();
 }
