@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& stream, const expr::token_list& list) {
 
     stream << "[" << list[0];
     for (size_t i = 1; i < list.size(); ++i) {
-        stream << ", " << list[i];
+        stream << ",\n " << list[i];
     }
 
     return stream << "]\n";

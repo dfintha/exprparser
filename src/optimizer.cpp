@@ -148,7 +148,7 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
             return expr::error {
                 expr::error_code::OPTIMIZER_FAILED_TO_OPTIMIZE_CHILD,
                 child->location,
-                "failed to optimize child"
+                "Failed to optimize child."
             };
         }
     }

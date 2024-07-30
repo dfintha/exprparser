@@ -193,7 +193,7 @@ namespace expr {
                     tokens.front().location.begin,
                     tokens.back().location.end
                 },
-                "unknown error occurred during token list parsing"
+                "Unknown error occurred during token list parsing."
             };
         }
         return result;

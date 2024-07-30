@@ -5,31 +5,51 @@
 #include "tokenizer.h"
 #include "version.h"
 
+#include <cstring>
 #include <iostream>
+
+static void separator(const char *step) {
+    static constexpr size_t line_length = 80;
+    static const std::string line =
+        "----------------------------------------"
+        "----------------------------------------";
+
+    std::cout << "--- "
+              << step << ' '
+              << line.substr(0, line_length - strlen(step) - 5)
+              << "\n\n";
+}
 
 template <typename ProcessFn, typename... InputT>
 auto process_and_print(
+    const std::string& expression,
     const char *action,
     ProcessFn process,
     InputT&&... input
 ) {
     auto result = process(std::forward<InputT>(input)...);
     if (!result) {
-        std::cout << "failed to " << action << ": "
+        std::cout << expression << '\n';
+        for (size_t i = 0; i < expression.length(); ++i) {
+            const bool there = (i + 1) >= result.error().location.begin &&
+                               (i + 1) <= result.error().location.end;
+            std::cout << (there ? '^' : ' ');
+        }
+        std::cout << '\n'
+                  << "Failed to " << action << ": "
                   << result.error().description
-                  << " (at location "
-                  << result.error().location.begin
-                  << "-"
-                  << result.error().location.end
-                  << ")\n";
+                  << '\n';
     }
     std::cout << *result << '\n';
     return std::move(result);
 }
 
 static int process_expression(const std::string& expression) {
+    separator("Tokenization");
+
     using tokenize_fn = expr::tokenizer_result (*)(const std::string&);
     auto tokens = process_and_print<tokenize_fn>(
+        expression,
         "tokenize input",
         expr::tokenize,
         expression
@@ -37,7 +57,10 @@ static int process_expression(const std::string& expression) {
     if (!tokens)
         return 1;
 
+    separator("Parsing");
+
     auto parsed = process_and_print(
+        expression,
         "parse tokens",
         expr::parse,
         std::move(*tokens)
@@ -45,11 +68,14 @@ static int process_expression(const std::string& expression) {
     if (!parsed)
         return 2;
 
-    std::cout << "recreated expression string from parsed syntax tree: '"
+    std::cout << "Recreated expression string from parsed syntax tree: '"
               << expr::to_expression_string(*parsed)
-              << "'\n\n";
+              << "'.\n\n";
+
+    separator("Optimization");
 
     auto optimized = process_and_print(
+        expression,
         "optimize expression tree",
         expr::optimize,
         *parsed
@@ -57,9 +83,12 @@ static int process_expression(const std::string& expression) {
     if (!optimized)
         return 3;
 
-    std::cout << "recreated expression string from optimized syntax tree: '"
+
+    std::cout << "Recreated expression string from optimized syntax tree: '"
               << expr::to_expression_string(*optimized)
-              << "'\n\n";
+              << "'.\n\n";
+
+    separator("Evaluation");
 
     const auto symbols = expr::symbol_table{
         {"pi", 3.141592653589793238},
@@ -67,6 +96,7 @@ static int process_expression(const std::string& expression) {
     };
 
     auto result = process_and_print(
+        expression,
         "evaluate expression tree",
         expr::evaluate,
         *optimized,
@@ -88,13 +118,14 @@ int main(int argc, char **argv) {
               << " on " << expr::program_platform << ")\n\n";
 
     if (argc == 0) {
-        std::cout << "available built-in functions are: ";
+        std::cout << "Available built-in functions:\n";
+        std::cout << "    ";
         for (const auto& [_, definition] : expr::functions()) {
             std::cout << definition.signature << ' ';
         }
         std::cout << "\n\n";
 
-        std::cout << "please enter an expression: ";
+        std::cout << "Please enter an expression: ";
         std::string expression;
         std::getline(std::cin, expression);
         std::cout << '\n';
