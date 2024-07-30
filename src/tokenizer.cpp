@@ -39,6 +39,9 @@ static std::optional<expr::token_t> extract_single(
         case '/':
             type = expr::token_t::type_t::SLASH;
             break;
+        case '%':
+            type = expr::token_t::type_t::PERCENT;
+            break;
         case '^':
             type = expr::token_t::type_t::CARET;
             break;

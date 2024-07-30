@@ -17,6 +17,7 @@ namespace expr {
             MINUS,
             SLASH,
             ASTERISK,
+            PERCENT,
             CARET,
             OPENING_PARENTHESIS,
             CLOSING_PARENTHESIS,

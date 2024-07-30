@@ -23,7 +23,7 @@ private:
         return *(_position - 1);
     }
 
-    bool match(std::unordered_set<token_type_t>&& types) {
+    bool match(const std::unordered_set<token_type_t>& types) {
         if (_position == _tokens.end()) {
             return false;
         }
@@ -144,8 +144,14 @@ expr::node_ptr expression_parser_impl::parse_power() {
 }
 
 expr::node_ptr expression_parser_impl::parse_factor() {
+    static const std::unordered_set<token_type_t> tokens = {
+        token_type_t::ASTERISK,
+        token_type_t::SLASH,
+        token_type_t::PERCENT
+    };
+
     expr::node_ptr expression = parse_power();
-    while (match({token_type_t::ASTERISK, token_type_t::SLASH})) {
+    while (match(tokens)) {
         const size_t begin = expression->location.begin;
         expression = expr::make_binary_operator_node(
             previous().content,
@@ -154,6 +160,7 @@ expr::node_ptr expression_parser_impl::parse_factor() {
             expr::location_t{begin, previous().location.end}
         );
     }
+
     return expression;
 }
 

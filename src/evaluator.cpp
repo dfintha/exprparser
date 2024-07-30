@@ -108,6 +108,7 @@ namespace expr {
             {"-", [](double lhs, double rhs) { return lhs - rhs; }},
             {"*", [](double lhs, double rhs) { return lhs * rhs; }},
             {"/", [](double lhs, double rhs) { return lhs / rhs; }},
+            {"%", [](double lhs, double rhs) { return fmod(lhs, rhs); }},
             {"^", [](double lhs, double rhs) { return pow(lhs, rhs); }},
         };
 

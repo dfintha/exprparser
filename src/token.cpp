@@ -18,6 +18,8 @@ std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
             return stream << "Slash";
         case expr::token_t::type_t::ASTERISK:
             return stream << "Asterisk";
+        case expr::token_t::type_t::PERCENT:
+            return stream << "Percent";
         case expr::token_t::type_t::CARET:
             return stream << "Caret";
         case expr::token_t::type_t::OPENING_PARENTHESIS:
