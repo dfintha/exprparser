@@ -3,6 +3,7 @@
 #include "optimizer.h"
 #include "parser.h"
 #include "tokenizer.h"
+#include "version.h"
 
 #include <iostream>
 
@@ -80,6 +81,11 @@ static int process_expression(const std::string& expression) {
 
 int main(int argc, char **argv) {
     --argc, ++argv;
+
+    std::cout << expr::program_name << ' ' << expr::program_version
+              << " (Built with "
+              << expr::program_compiler << ' ' << expr::program_compiler_version
+              << " on " << expr::program_platform << ")\n\n";
 
     if (argc == 0) {
         std::cout << "available built-in functions are: ";
