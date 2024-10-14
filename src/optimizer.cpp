@@ -1,10 +1,10 @@
 #include "optimizer.h"
-
 #include "evaluator.h"
-#include <cfloat>
-#include <cmath>
-#include <iostream>
-#include <optional>
+
+#include <cfloat>           // DBL_EPSILON
+#include <cmath>            // std::fabs
+#include <optional>         // std::optional
+#include <sstream>          // std::stringstream, iostream, iomanip
 
 static bool is_near(double lhs, double rhs) {
     return std::fabs(lhs - rhs) <= DBL_EPSILON;
@@ -18,6 +18,12 @@ static bool are_all_children_numbers(
             return false;
     }
     return true;
+}
+
+static std::string make_number_representation(double value) {
+    std::stringstream converter;
+    converter << std::noshowpoint << value;
+    return converter.str();
 }
 
 static std::optional<double> evaluate_child(const expr::node_ptr& child) {
@@ -45,11 +51,12 @@ static expr::optimizer_result make_optimized_binary_op(
     // if every operand is a literal, the expression can be evaluated
     if (are_all_children_numbers(original->children)) {
         const auto value = expr::evaluate(original, {}, {});
-        if (value)
+        if (value) {
             return expr::make_number_literal_node(
-                std::to_string(*value),
+                make_number_representation(*value),
                 location
             );
+        }
     }
 
     if (operation == "+") {
@@ -165,7 +172,8 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
         if (root->children[0]->type == expr::node_t::type_t::NUMBER) {
             if (const auto value = expr::evaluate(root, {}, {})) {
                 return expr::make_number_literal_node(
-                    std::to_string(*value), root->location
+                    make_number_representation(*value),
+                    root->location
                 );
             }
         }

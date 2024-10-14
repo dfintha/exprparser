@@ -1,6 +1,6 @@
 #include "token.h"
 
-#include <iostream>
+#include <iostream>         // std::ostream
 
 std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
     switch (type) {

@@ -1,9 +1,8 @@
 #include "evaluator.h"
 
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <optional>
+#include <algorithm>        // std::transform
+#include <cmath>            // std::fmod, std::pow
+#include <functional>       // std::function
 
 using namespace std::literals;
 
@@ -41,11 +40,14 @@ static expr::function_result call_function(
 }
 
 static int get_precedence_score(const expr::node_ptr& node) {
-    const bool is_plus_minus = node->content == "+" || node->content == "-";
-    const bool is_asterisk_slash = node->content == "*" || node->content == "/";
     switch (node->type) {
-        case expr::node_t::type_t::BINARY_OP:
-            return is_plus_minus ? 1 : (is_asterisk_slash ? 2 : 3);
+        case expr::node_t::type_t::BINARY_OP: {
+            if (node->content == "+" || node->content == "-")
+                return 1;
+            if (node->content == "*" || node->content == "/")
+                return 2;
+            return 3;
+        }
         case expr::node_t::type_t::FUNCTION_CALL:
             return 4;
         case expr::node_t::type_t::UNARY_OP:
@@ -111,8 +113,8 @@ namespace expr {
             {"-", [](double lhs, double rhs) { return lhs - rhs; }},
             {"*", [](double lhs, double rhs) { return lhs * rhs; }},
             {"/", [](double lhs, double rhs) { return lhs / rhs; }},
-            {"%", [](double lhs, double rhs) { return fmod(lhs, rhs); }},
-            {"^", [](double lhs, double rhs) { return pow(lhs, rhs); }},
+            {"%", [](double lhs, double rhs) { return std::fmod(lhs, rhs); }},
+            {"^", [](double lhs, double rhs) { return std::pow(lhs, rhs); }},
         };
 
         using unary_operator = std::function<double(double)>;

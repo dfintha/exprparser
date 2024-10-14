@@ -1,6 +1,6 @@
 #include "parser.h"
 
-#include <unordered_set>
+#include <unordered_set>    // std::unordered_set
 
 class expression_parser_impl final {
 public:

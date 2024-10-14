@@ -1,6 +1,6 @@
 #include "node.h"
 
-#include <iostream>
+#include <iostream>         // std::ostream
 
 namespace expr {
     node_ptr make_boolean_literal_node(

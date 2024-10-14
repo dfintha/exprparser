@@ -3,9 +3,9 @@
 
 #include "location.h"
 
-#include <iosfwd>
-#include <string>
-#include <vector>
+#include <iosfwd>           // std::ostream
+#include <string>           // std::string
+#include <vector>           // std::vector
 
 namespace expr {
     struct token_t final {

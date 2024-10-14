@@ -1,6 +1,6 @@
 #include "version.h"
 
-#include <iostream>
+#include <iostream>         // std::ostream
 
 std::ostream& operator<<(std::ostream& stream, const expr::version_t& version) {
     return stream << 'v' << version.major

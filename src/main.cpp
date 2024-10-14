@@ -5,18 +5,14 @@
 #include "tokenizer.h"
 #include "version.h"
 
-#include <cstring>
-#include <iostream>
+#include <cstring>          // std::strlen
+#include <iostream>         // std::cout
 
 static void separator(const char *step) {
     static constexpr size_t line_length = 80;
-    static const std::string line =
-        "----------------------------------------"
-        "----------------------------------------";
-
-    std::cout << "--- "
-              << step << ' '
-              << line.substr(0, line_length - strlen(step) - 5)
+    static const std::string line = std::string(line_length, '-');
+    std::cout << "--- " << step << ' '
+              << line.substr(0, line_length - std::strlen(step) - 5)
               << "\n\n";
 }
 
@@ -39,8 +35,10 @@ auto process_and_print(
                   << "Failed to " << action << ": "
                   << result.error().description
                   << '\n';
+    } else {
+        std::cout << *result << '\n';
     }
-    std::cout << *result << '\n';
+
     return std::move(result);
 }
 

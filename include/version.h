@@ -1,14 +1,14 @@
 #if !defined(EXPRPARSER_VERSION_HEADER)
 #define EXPRPARSER_VERSION_HEADER
 
-#include <cstdint>
-#include <iosfwd>
+#include <cstdint>          // std::uint16_t
+#include <iosfwd>           // std::ostream
 
 namespace expr {
     struct version_t {
-        uint16_t major;
-        uint16_t minor;
-        uint16_t revision;
+        std::uint16_t major;
+        std::uint16_t minor;
+        std::uint16_t revision;
     };
 
     static constexpr const char *program_name = "exprparser";

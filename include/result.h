@@ -3,10 +3,9 @@
 
 #include "location.h"
 
-#include <string>
-#include <type_traits>
-#include <utility>
-#include <variant>
+#include <string>           // std::string
+#include <type_traits>      // std::is_convertible_v
+#include <variant>          // std::variant, std::get_if
 
 namespace expr {
     enum error_code : unsigned {

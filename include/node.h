@@ -3,10 +3,10 @@
 
 #include "location.h"
 
-#include <iosfwd>
-#include <memory>
-#include <string>
-#include <vector>
+#include <iosfwd>           // std::ostream
+#include <memory>           // std::unique_ptr
+#include <string>           // std::string
+#include <vector>           // std::vector
 
 namespace expr {
     struct node_t;

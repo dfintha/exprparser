@@ -4,8 +4,7 @@
 #include "functions.h"
 #include "node.h"
 
-#include <string>
-#include <unordered_map>
+#include <unordered_map>    // std::unordered_map
 
 namespace expr {
     using evaluator_result = function_result;

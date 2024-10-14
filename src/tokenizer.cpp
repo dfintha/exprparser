@@ -1,9 +1,9 @@
 #include "tokenizer.h"
 
-#include <algorithm>
-#include <cctype>
-#include <cstring>
-#include <optional>
+#include <algorithm>        // std::find
+#include <cctype>           // std::isalpha, std::isdigit, std::isxdigit
+#include <cstring>          // std::strlen
+#include <optional>         // std::optional
 
 static bool is_valid_numeric_part(const std::string& content, char current) {
     if (content == "0" && (current == 'x' || current == 'b'))
@@ -12,7 +12,7 @@ static bool is_valid_numeric_part(const std::string& content, char current) {
     if (content.substr(0, 2) == "0b" && (current == '0' || current == '1'))
         return true;
 
-    if (content.substr(0, 2) == "0x" && isxdigit(current))
+    if (content.substr(0, 2) == "0x" && std::isxdigit(current))
         return true;
 
     const bool has_lowercase_e = content.find('e') != std::string::npos;
@@ -163,7 +163,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
 
 namespace expr {
     tokenizer_result tokenize(const char *expression) {
-        return ::tokenize(expression, strlen(expression));
+        return ::tokenize(expression, std::strlen(expression));
     }
 
     tokenizer_result tokenize(const std::string& expression) {

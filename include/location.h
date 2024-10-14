@@ -1,12 +1,12 @@
 #if !defined(EXPRPARSER_LOCATION_HEADER)
 #define EXPRPARSER_LOCATION_HEADER
 
-#include <cstddef>
+#include <cstddef>          // std::size_t
 
 namespace expr {
     struct location_t {
-        size_t begin;
-        size_t end;
+        std::size_t begin;
+        std::size_t end;
     };
 }
 

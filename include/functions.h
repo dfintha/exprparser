@@ -4,9 +4,8 @@
 #include "location.h"
 #include "result.h"
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <unordered_map>    // std::unordered_map
+#include <vector>           // std::vector
 
 namespace expr {
     using function_result = result<double, error>;
