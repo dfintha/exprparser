@@ -14,8 +14,23 @@ namespace expr {
     static constexpr const char *program_name = "exprparser";
     static constexpr const version_t program_version = { 0, 1, 0 };
 
-#if defined(__clang__)
-    static constexpr const char *program_compiler = "Clang";
+#if defined(__INTEL_COMPILER)
+    static constexpr const char *program_compiler = "ICC";
+    static constexpr const version_t program_compiler_version = {
+#if __INTEL_COMPILER > 2000
+        __INTEL_COMPILER,
+#else
+        __INTEL_COMPILER / 100,
+#endif
+        __INTEL_COMPILER_UPDATE,
+        0
+    };
+#elif defined(__clang__)
+#if defined(__apple_build_version__)
+    static constexpr const char *program_compiler = "Apple Clang";
+#else
+    static constexpr const char *program_compiler = "LLVM Clang";
+#endif
     static constexpr const version_t program_compiler_version = {
         __clang_major__, __clang_minor__, __clang_patchlevel__
     };
