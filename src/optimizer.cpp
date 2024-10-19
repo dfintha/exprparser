@@ -20,6 +20,24 @@ static bool are_all_children_numbers(
     return true;
 }
 
+static bool are_binary_operands_the_same(
+    const std::vector<expr::node_ptr>& operands
+) {
+    if (operands.size() != 2)
+        return false;
+
+    if (operands[0]->type != expr::node_t::type_t::VARIABLE)
+        return false;
+
+    if (operands[1]->type != expr::node_t::type_t::VARIABLE)
+        return false;
+
+    if (operands[0]->content != operands[1]->content)
+        return false;
+
+    return true;
+}
+
 static std::string make_number_representation(double value) {
     std::stringstream converter;
     converter << std::noshowpoint << value;
@@ -70,6 +88,11 @@ static expr::optimizer_result make_optimized_binary_op(
     }
 
     if (operation == "-") {
+        // division of a variable from itself results in 0
+        if (are_binary_operands_the_same(original->children)) {
+            return expr::make_number_literal_node("0", location);
+        }
+
         const auto value_0 = evaluate_child(original->children[0]);
         const auto value_1 = evaluate_child(original->children[1]);
 
@@ -87,6 +110,19 @@ static expr::optimizer_result make_optimized_binary_op(
     }
 
     if (operation == "*") {
+        // multiplication of a variable with itself is its 2nd power
+        if (are_binary_operands_the_same(original->children)) {
+            return expr::make_binary_operator_node(
+                "^",
+                std::move(original->children[0]),
+                expr::make_number_literal_node(
+                    "2",
+                    original->children[1]->location
+                ),
+                location
+            );
+        }
+
         for (size_t i = 0; i < original->children.size(); ++i) {
             const auto value = evaluate_child(original->children[i]);
 
@@ -110,6 +146,11 @@ static expr::optimizer_result make_optimized_binary_op(
     }
 
     if (operation == "/") {
+        // division of a variable with itself results in 1
+        if (are_binary_operands_the_same(original->children)) {
+            return  expr::make_number_literal_node("1", location);
+        }
+
         const auto value_0 = evaluate_child(original->children[0]);
         const auto value_1 = evaluate_child(original->children[1]);
 
