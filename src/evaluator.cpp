@@ -3,6 +3,7 @@
 #include <algorithm>        // std::transform
 #include <cmath>            // std::fmod, std::pow
 #include <functional>       // std::function
+#include <optional>         // std::optional
 
 using namespace std::literals;
 
@@ -101,6 +102,24 @@ static std::string function_call_to_expression_string(
     return result;
 }
 
+static std::optional<double> parse_binary_number(const std::string& content) {
+    if (content.substr(0, 2) != "0b")
+        return std::nullopt;
+
+    return double(std::strtol(content.substr(2).c_str(), nullptr, 2));
+}
+
+static std::optional<double> parse_octal_number(const std::string& content) {
+    if (content.length() == 0 || content[0] != '0')
+        return std::nullopt;
+
+    auto valid_octal_char = [](char c) { return (c >= '0' && c <= '7'); };
+    if (!std::all_of(content.begin(), content.end(), valid_octal_char))
+        return std::nullopt;
+
+    return double(std::strtol(content.substr(1).c_str(), nullptr, 8));
+}
+
 namespace expr {
     evaluator_result evaluate(
         const node_ptr& node,
@@ -162,11 +181,11 @@ namespace expr {
                 };
             }
             case node_t::type_t::NUMBER: {
-                const auto& content = node->content;
-                const bool is_binary = content.substr(0, 2) == "0b";
-                return is_binary
-                    ? double(strtol(content.substr(2).c_str(), nullptr, 2))
-                    : strtod(content.c_str(), nullptr);
+                if (auto bin = parse_binary_number(node->content))
+                    return *bin;
+                if (auto oct = parse_octal_number(node->content))
+                    return *oct;
+                return std::strtod(node->content.c_str(), nullptr);
             }
             case node_t::type_t::BOOLEAN:
                 return node->content == "true" ? 1.0 : 0.0;
