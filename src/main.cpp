@@ -1,3 +1,4 @@
+#include "derivator.h"
 #include "evaluator.h"
 #include "functions.h"
 #include "optimizer.h"
@@ -81,9 +82,23 @@ static int process_expression(const std::string& expression) {
     if (!optimized)
         return 3;
 
-
     std::cout << "Recreated expression string from optimized syntax tree: '"
               << expr::to_expression_string(*optimized)
+              << "'.\n\n";
+
+    separator("Derivation");
+
+    auto derived = process_and_print(
+        expression,
+        "derive expression",
+        expr::derive,
+        *parsed
+    );
+    if (!derived)
+        return 4;
+
+    std::cout << "Recreated expression string from derived syntax tree: '"
+              << expr::to_expression_string(*derived)
               << "'.\n\n";
 
     separator("Evaluation");
@@ -102,7 +117,7 @@ static int process_expression(const std::string& expression) {
         expr::functions()
     );
     if (!result)
-        return 4;
+        return 5;
 
     return EXIT_SUCCESS;
 }
