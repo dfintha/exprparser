@@ -114,8 +114,8 @@ std::ostream& operator<<(std::ostream& stream, const expr::node_ptr& node) {
     static std::string indent = "";
     stream << indent << node->type
            << "('" << node->content
-           << "'@" << node->location.begin << '-'
-           << node->location.end - 1 << ')' << std::endl;
+           << "'@" << node->location
+           << ')' << std::endl;
     indent += "  ";
     for (const auto& child : node->children) {
         stream << child;
