@@ -3,6 +3,7 @@
 #include <algorithm>        // std::transform
 #include <cmath>            // std::fmod, std::pow
 #include <functional>       // std::function
+#include <iterator>         // std::back_inserter
 #include <optional>         // std::optional
 
 using namespace std::literals;
@@ -79,13 +80,14 @@ static std::string binary_op_to_expression_string(const expr::node_ptr& node) {
 }
 
 static std::string unary_op_to_expression_string(const expr::node_ptr& node) {
-    const bool parent_precedence = get_precedence_score(node);
-    const bool child_precedence = get_precedence_score(node->children[0]);
-    const bool child_lesser = (child_precedence < parent_precedence);
+    const bool child_num = node->children[0]->type == expr::node_t::type_t::NUMBER;
+    const bool child_var = node->children[0]->type == expr::node_t::type_t::VARIABLE;
+    const bool child_bool = node->children[0]->type == expr::node_t::type_t::BOOLEAN;
+    const bool child_primary = child_num || child_var || child_bool;
     return node->content
-        + (child_lesser ? "(" : "")
+        + (!child_primary ? "(" : "")
         + expr::to_expression_string(node->children[0])
-        + (child_lesser ? ")" : "");
+        + (!child_primary ? ")" : "");
 }
 
 static std::string function_call_to_expression_string(

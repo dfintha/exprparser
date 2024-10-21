@@ -5,6 +5,7 @@
 
 #include <string>           // std::string
 #include <type_traits>      // std::is_convertible_v
+#include <utility>          // std::forward
 #include <variant>          // std::variant, std::get_if
 
 namespace expr {

@@ -3,7 +3,7 @@
 #include <algorithm>        // std::find
 #include <cctype>           // std::isalpha, std::isdigit, std::isxdigit
 #include <cstring>          // std::strlen
-#include <optional>         // std::optional
+#include <optional>         // std::optional, std::nullopt
 
 static bool is_valid_numeric_part(const std::string& content, char current) {
     if (content == "0" && (current == 'x' || current == 'b'))
@@ -30,7 +30,7 @@ static bool is_valid_numeric_part(const std::string& content, char current) {
     if (has_any_e && (current == '-' || current == '+'))
         return true;
 
-    return isdigit(current);
+    return std::isdigit(current);
 }
 
 static std::optional<expr::token_t> extract_single(

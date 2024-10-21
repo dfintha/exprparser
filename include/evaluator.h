@@ -4,8 +4,6 @@
 #include "functions.h"
 #include "node.h"
 
-#include <unordered_map>    // std::unordered_map
-
 namespace expr {
     using evaluator_result = function_result;
     using symbol_table = std::unordered_map<std::string, double>;
