@@ -17,6 +17,29 @@ namespace expr {
         );
     }
 
+    bool operator==(const node_t& lhs, const node_t& rhs) {
+        if (lhs.type != rhs.type)
+            return false;
+
+        if (lhs.content != rhs.content)
+            return false;
+
+        const size_t size = lhs.children.size();
+        if (rhs.children.size() != size)
+            return false;
+
+        for (size_t i = 0; i < size; ++i) {
+            if (*lhs.children[i] != *rhs.children[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    bool operator!=(const node_t& lhs, const node_t& rhs) {
+        return !(lhs == rhs);
+    }
+
     node_ptr make_number_literal_node(
         std::string content,
         location_t location

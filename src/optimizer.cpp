@@ -23,19 +23,7 @@ static bool are_all_children_numbers(
 static bool are_binary_operands_the_same(
     const std::vector<expr::node_ptr>& operands
 ) {
-    if (operands.size() != 2)
-        return false;
-
-    if (operands[0]->type != expr::node_t::type_t::VARIABLE)
-        return false;
-
-    if (operands[1]->type != expr::node_t::type_t::VARIABLE)
-        return false;
-
-    if (operands[0]->content != operands[1]->content)
-        return false;
-
-    return true;
+    return operands.size() == 2 && *operands[0] == *operands[1];
 }
 
 static std::string make_number_representation(double value) {

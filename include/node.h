@@ -26,6 +26,9 @@ namespace expr {
         std::string content;
         std::vector<node_ptr> children;
         location_t location;
+
+        friend bool operator==(const node_t& lhs, const node_t& rhs);
+        friend bool operator!=(const node_t& lhs, const node_t& rhs);
     };
 
     node_ptr make_boolean_literal_node(
