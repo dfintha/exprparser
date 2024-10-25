@@ -4,5 +4,11 @@
   "description": "Very basic expression parser written in C++.",
   "project_type": "executable",
   "version": "0.1.0",
-  "cpp_standard": "c++17"
+  "cpp_standard": "c++17",
+  "external_libraries": [
+    {
+        "type": "pkg_config",
+        "name": "readline"
+    }
+  ]
 }

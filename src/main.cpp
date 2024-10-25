@@ -6,8 +6,11 @@
 #include "tokenizer.h"
 #include "version.h"
 
-#include <cstring>          // std::strlen
+#include <cstring>          // strdup, std::strlen, std::strncmp
 #include <iostream>         // std::cout
+
+#include <readline/readline.h>  // readline, rl_bind_key
+#include <readline/history.h>   // add_history, using_history
 
 static void separator(const char *step) {
     static constexpr size_t line_length = 80;
@@ -43,9 +46,35 @@ auto process_and_print(
     return std::move(result);
 }
 
+void evaluate_and_print(
+    const expr::parser_result& root,
+    const char *tree_kind,
+    int return_code_on_fail
+) {
+    static const auto symbols = expr::symbol_table{
+        {"pi", 3.141592653589793238},
+        {"e", 2.718281828459045235}
+    };
+
+    if (!root) {
+        std::exit(return_code_on_fail);
+    } else {
+        std::cout << "Recreated expression string from "
+                  << tree_kind << " syntax tree: '"
+                  << expr::to_expression_string(*root) << "'.\n";
+
+        auto evaluated = expr::evaluate(*root, symbols, expr::functions());
+        if (evaluated.has_value()) {
+            std::cout << "Evaluation result: " << *evaluated << "\n\n";
+        } else {
+            std::cout << "Failed to evaluate: "
+                      << evaluated.error().description << "\n\n";
+        }
+    }
+}
+
 static int process_expression(const std::string& expression) {
     separator("Tokenization");
-
     using tokenize_fn = expr::tokenizer_result (*)(const std::string&);
     auto tokens = process_and_print<tokenize_fn>(
         expression,
@@ -57,72 +86,79 @@ static int process_expression(const std::string& expression) {
         return 1;
 
     separator("Parsing");
-
     auto parsed = process_and_print(
         expression,
         "parse tokens",
         expr::parse,
         std::move(*tokens)
     );
-    if (!parsed)
-        return 2;
-
-    std::cout << "Recreated expression string from parsed syntax tree: '"
-              << expr::to_expression_string(*parsed)
-              << "'.\n\n";
+    evaluate_and_print(parsed, "parsed", 2);
 
     separator("Optimization");
-
     auto optimized = process_and_print(
         expression,
         "optimize expression tree",
         expr::optimize,
         *parsed
     );
-    if (!optimized)
-        return 3;
-
-    std::cout << "Recreated expression string from optimized syntax tree: '"
-              << expr::to_expression_string(*optimized)
-              << "'.\n\n";
+    evaluate_and_print(optimized, "optimized", 3);
 
     separator("Derivation");
-
     auto derived = process_and_print(
         expression,
         "derive expression",
         expr::derive,
         *parsed
     );
-    if (!derived)
-        return 4;
-
-    std::cout << "Recreated expression string from derived syntax tree: '"
-              << expr::to_expression_string(*derived)
-              << "'.\n\n";
-
-    separator("Evaluation");
-
-    const auto symbols = expr::symbol_table{
-        {"pi", 3.141592653589793238},
-        {"e", 2.718281828459045235}
-    };
-
-    auto result = process_and_print(
-        expression,
-        "evaluate expression tree",
-        expr::evaluate,
-        *optimized,
-        symbols,
-        expr::functions()
-    );
-    if (!result)
-        return 5;
+    evaluate_and_print(derived, "derived", 4);
 
     return EXIT_SUCCESS;
 }
 
+static void initialize_completion() {
+    auto completion = [](const char *text, int, int) {
+        auto generator = [](const char *text, int state) {
+            static bool initialized = false;
+            static std::vector<std::string> symbols;
+            if (!initialized) {
+                const auto& functions = expr::functions();
+                symbols.reserve(functions.size());
+                for (const auto& [name, _] : functions) {
+                    symbols.push_back(name);
+                }
+                initialized = true;
+            }
+
+            static size_t index;
+            static size_t length;
+            if (state == 0) {
+                index = 0;
+                length = std::strlen(text);
+            }
+
+            const char *name;
+            while ((name = symbols[index++].c_str())) {
+                if (std::strncmp(name, text, length) == 0) {
+                    return strdup(name);
+                }
+            }
+
+            return static_cast<char *>(nullptr);
+        };
+
+        rl_attempted_completion_over = 1;
+        rl_completion_suppress_append = 1;
+        return rl_completion_matches(text, generator);
+    };
+
+    rl_bind_key('\t', rl_complete);
+    rl_attempted_completion_function = completion;
+}
+
 int main(int argc, char **argv) {
+    initialize_completion();
+    using_history();
+
     --argc, ++argv;
 
     std::cout << expr::program_name << ' ' << expr::program_version
@@ -138,11 +174,18 @@ int main(int argc, char **argv) {
         }
         std::cout << "\n\n";
 
-        std::cout << "Please enter an expression: ";
-        std::string expression;
-        std::getline(std::cin, expression);
-        std::cout << '\n';
-        return process_expression(expression);
+        while (true) {
+            char *input = readline("exprparser> ");
+            if (!input)
+                return 0;
+
+            std::cout << std::endl;
+            add_history(input);
+            process_expression(input);
+            std::free(input);
+        }
+
+        return 0;
     }
 
     for (int i = 0; i < argc; ++i) {
