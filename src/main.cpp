@@ -22,7 +22,7 @@ static void separator(const char *step) {
 
 template <typename ProcessFn, typename... InputT>
 auto process_and_print(
-    const std::string& expression,
+    std::string_view expression,
     const char *action,
     ProcessFn process,
     InputT&&... input
@@ -48,42 +48,42 @@ auto process_and_print(
 
 void evaluate_and_print(
     const expr::parser_result& root,
-    const char *tree_kind,
-    int return_code_on_fail
+    std::string_view tree_kind
 ) {
     static const auto symbols = expr::symbol_table{
         {"pi", 3.141592653589793238},
         {"e", 2.718281828459045235}
     };
 
-    if (!root) {
-        std::exit(return_code_on_fail);
-    } else {
-        std::cout << "Recreated expression string from "
-                  << tree_kind << " syntax tree: '"
-                  << expr::to_expression_string(*root) << "'.\n";
+    if (!root)
+        return;
 
-        auto evaluated = expr::evaluate(*root, symbols, expr::functions());
-        if (evaluated.has_value()) {
-            std::cout << "Evaluation result: " << *evaluated << "\n\n";
-        } else {
-            std::cout << "Failed to evaluate: "
-                      << evaluated.error().description << "\n\n";
-        }
+    std::cout << "Recreated expression string from "
+              << tree_kind << " syntax tree: '"
+              << expr::to_expression_string(*root) << "'.\n";
+
+    auto evaluated = expr::evaluate(*root, symbols, expr::functions());
+    if (evaluated.has_value()) {
+        std::cout << "Evaluation result: " << *evaluated << "\n\n";
+    } else {
+        std::cout << "Failed to evaluate: "
+                  << evaluated.error().description << "\n\n";
     }
 }
 
-static int process_expression(const std::string& expression) {
+static int process_expression(std::string_view expression) {
     separator("Tokenization");
-    using tokenize_fn = expr::tokenizer_result (*)(const std::string&);
+    using tokenize_fn = expr::tokenizer_result (*)(std::string_view);
     auto tokens = process_and_print<tokenize_fn>(
         expression,
         "tokenize input",
         expr::tokenize,
         expression
     );
-    if (!tokens)
-        return 1;
+    if (!tokens) {
+        std::cout << "Failed to tokenize: "
+                  << tokens.error().description << "\n\n";
+    }
 
     separator("Parsing");
     auto parsed = process_and_print(
@@ -92,7 +92,7 @@ static int process_expression(const std::string& expression) {
         expr::parse,
         std::move(*tokens)
     );
-    evaluate_and_print(parsed, "parsed", 2);
+    evaluate_and_print(parsed, "parsed");
 
     separator("Optimization");
     auto optimized = process_and_print(
@@ -101,16 +101,16 @@ static int process_expression(const std::string& expression) {
         expr::optimize,
         *parsed
     );
-    evaluate_and_print(optimized, "optimized", 3);
+    evaluate_and_print(optimized, "optimized");
 
     separator("Derivation");
     auto derived = process_and_print(
         expression,
         "derive expression",
         expr::derive,
-        *parsed
+        std::move(*parsed)
     );
-    evaluate_and_print(derived, "derived", 4);
+    evaluate_and_print(derived, "derived");
 
     return EXIT_SUCCESS;
 }
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < argc; ++i) {
         std::cout << '"' << argv[i] << "\"\n\n";
-        const int result = process_expression(std::string(argv[i]));
+        const int result = process_expression(std::string_view(argv[i]));
         if (result != EXIT_SUCCESS)
             return result;
         std::cout << "\n\n";

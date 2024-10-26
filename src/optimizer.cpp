@@ -32,19 +32,15 @@ static std::string make_number_representation(double value) {
     return converter.str();
 }
 
-static std::optional<double> evaluate_child(const expr::node_ptr& child) {
-    if (child->type != expr::node_t::type_t::NUMBER)
-        return std::nullopt;
-    if (auto evaluated = expr::evaluate(child, {}, {}))
-        return *evaluated;
-    return std::nullopt;
+static expr::evaluator_result evaluate_node(const expr::node_ptr& child) {
+    return expr::evaluate(child, {}, {});
 }
 
 static std::optional<expr::optimizer_result> make_optimized_addition(
     expr::node_ptr& original
 ) {
     for (size_t i = 0; i < original->children.size(); ++i) {
-        const auto value = evaluate_child(original->children[i]);
+        const auto value = evaluate_node(original->children[i]);
 
         // Addition of 0 is a no-op both ways.
         if (value && is_near(*value, 0))
@@ -61,8 +57,8 @@ static std::optional<expr::optimizer_result> make_optimized_subtraction(
     if (are_binary_operands_the_same(original->children))
         return expr::make_number_literal_node("0", location);
 
-    const auto value_0 = evaluate_child(original->children[0]);
-    const auto value_1 = evaluate_child(original->children[1]);
+    const auto value_0 = evaluate_node(original->children[0]);
+    const auto value_1 = evaluate_node(original->children[1]);
 
     // Subtraction of 0 is a no-op.
     if (value_1 && is_near(*value_1, 0))
@@ -98,7 +94,7 @@ static std::optional<expr::optimizer_result> make_optimized_multiplication(
     }
 
     for (size_t i = 0; i < original->children.size(); ++i) {
-        const auto value = evaluate_child(original->children[i]);
+        const auto value = evaluate_node(original->children[i]);
 
         // Multiplication with 0 results in 0.
         if (value && is_near(*value, 0))
@@ -130,8 +126,8 @@ static std::optional<expr::optimizer_result> make_optimized_division(
         return  expr::make_number_literal_node("1", location);
     }
 
-    const auto value_0 = evaluate_child(original->children[0]);
-    const auto value_1 = evaluate_child(original->children[1]);
+    const auto value_0 = evaluate_node(original->children[0]);
+    const auto value_1 = evaluate_node(original->children[1]);
 
     // Division of 0 is always 0.
     if (value_0 && is_near(*value_0, 0))
@@ -157,7 +153,7 @@ static std::optional<expr::optimizer_result> make_optimized_exponentiation(
     expr::node_ptr& original,
     const expr::location_t location
 ) {
-    const auto value = evaluate_child(original->children[1]);
+    const auto value = evaluate_node(original->children[1]);
 
     // The 0th power of every number is 1.
     if (value && is_near(*value, 0))
@@ -230,20 +226,49 @@ static expr::optimizer_result make_optimized_binary_op(
     return original;
 }
 
+static std::vector<expr::node_ptr> optimize_children(
+    const expr::node_ptr& node
+) {
+    std::vector<expr::node_ptr> result;
+    for (auto& child : node->children) {
+        if (auto optimized = expr::optimize(child)) {
+            result.push_back(std::move(*optimized));
+        } else {
+            return result;
+        }
+    }
+    return result;
+}
+
 expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
     // First, we optimize all the children of the node so we can perform later
     // checks on the simplest equivalent subexpression.
-    std::vector<expr::node_ptr> children;
-    for (auto& child : root->children) {
-        if (auto optimized = expr::optimize(child)) {
-            children.push_back(std::move(*optimized));
-        } else {
-            return expr::error {
-                expr::error_code::OPTIMIZER_FAILED_TO_OPTIMIZE_CHILD,
-                child->location,
-                "Failed to optimize child."
-            };
+    auto children = optimize_children(root);
+    if (children.size() != root->children.size()) {
+        return expr::error {
+            expr::error_code::OPTIMIZER_FAILED_TO_OPTIMIZE_CHILD,
+            root->children[children.size()]->location,
+            "Failed to optimize child."
+        };
+    }
+
+    // We shortcut the whole optimization if the expression can be evaluated
+    // parse-time. We do this after children are optimized so some variables
+    // may be optimized out (e.g. x - x is always 0 but if we try to evaluate
+    // the tree as-is we's fail since x can not be evaluated parse-time).
+    auto preoptimized = std::unique_ptr<expr::node_t> {
+        new expr::node_t {
+            root->type,
+            root->content,
+            optimize_children(root),
+            root->location
         }
+    };
+    if (auto evaluated = evaluate_node(preoptimized)) {
+        return expr::make_number_literal_node(
+            std::to_string(*evaluated),
+            root->location
+        );
     }
 
     if (root->type == expr::node_t::type_t::BINARY_OP) {
