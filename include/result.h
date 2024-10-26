@@ -32,6 +32,7 @@ namespace expr {
         DERIVATOR_GENERAL_ERROR = 5001,
         DERIVATOR_FUNCTION_NOT_DERIVABLE = 5002,
         DERIVATOR_CANT_BE_DONE_AT_PARSE_TIME = 5003,
+        DERIVATOR_WRONG_ARGUMENT_COUNT = 5004,
     };
 
     struct error {

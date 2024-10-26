@@ -339,6 +339,13 @@ static expr::derivator_result derive_logarithms(const expr::node_ptr& root) {
     if (root->content == "log2" || root->content == "log10") {
         base_literal = root->content.substr(3);
     } else {
+        if (root->children.size() != 2)
+            return expr::error{
+                expr::error_code::DERIVATOR_WRONG_ARGUMENT_COUNT,
+                root->location,
+                "Function log(x, base) takes 2 argument(s)."
+            };
+
         auto base = expr::optimize(root->children[1]);
         if (!base)
             return base;
