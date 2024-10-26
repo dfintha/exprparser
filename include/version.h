@@ -12,7 +12,7 @@ namespace expr {
     };
 
     static constexpr const char *program_name = "exprparser";
-    static constexpr const version_t program_version = { 0, 1, 0 };
+    static constexpr const version_t program_version = { 0, 2, 0 };
 
 #if defined(__INTEL_COMPILER)
     static constexpr const char *program_compiler = "ICC";
