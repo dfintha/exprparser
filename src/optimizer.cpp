@@ -32,15 +32,11 @@ static std::string make_number_representation(double value) {
     return converter.str();
 }
 
-static expr::evaluator_result evaluate_node(const expr::node_ptr& child) {
-    return expr::evaluate(child, {}, {});
-}
-
 static std::optional<expr::optimizer_result> make_optimized_addition(
     expr::node_ptr& original
 ) {
     for (size_t i = 0; i < original->children.size(); ++i) {
-        const auto value = evaluate_node(original->children[i]);
+        const auto value = expr::evaluate(original->children[i], {}, {});
 
         // Addition of 0 is a no-op both ways.
         if (value && is_near(*value, 0))
@@ -57,8 +53,8 @@ static std::optional<expr::optimizer_result> make_optimized_subtraction(
     if (are_binary_operands_the_same(original->children))
         return expr::make_number_literal_node("0", location);
 
-    const auto value_0 = evaluate_node(original->children[0]);
-    const auto value_1 = evaluate_node(original->children[1]);
+    const auto value_0 = expr::evaluate(original->children[0], {}, {});
+    const auto value_1 = expr::evaluate(original->children[1], {}, {});
 
     // Subtraction of 0 is a no-op.
     if (value_1 && is_near(*value_1, 0))
@@ -94,7 +90,7 @@ static std::optional<expr::optimizer_result> make_optimized_multiplication(
     }
 
     for (size_t i = 0; i < original->children.size(); ++i) {
-        const auto value = evaluate_node(original->children[i]);
+        const auto value = expr::evaluate(original->children[i], {}, {});
 
         // Multiplication with 0 results in 0.
         if (value && is_near(*value, 0))
@@ -126,8 +122,8 @@ static std::optional<expr::optimizer_result> make_optimized_division(
         return  expr::make_number_literal_node("1", location);
     }
 
-    const auto value_0 = evaluate_node(original->children[0]);
-    const auto value_1 = evaluate_node(original->children[1]);
+    const auto value_0 = expr::evaluate(original->children[0], {}, {});
+    const auto value_1 = expr::evaluate(original->children[1], {}, {});
 
     // Division of 0 is always 0.
     if (value_0 && is_near(*value_0, 0))
@@ -153,7 +149,7 @@ static std::optional<expr::optimizer_result> make_optimized_exponentiation(
     expr::node_ptr& original,
     const expr::location_t location
 ) {
-    const auto value = evaluate_node(original->children[1]);
+    const auto value = expr::evaluate(original->children[1], {}, {});
 
     // The 0th power of every number is 1.
     if (value && is_near(*value, 0))
@@ -264,9 +260,9 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
             root->location
         }
     };
-    if (auto evaluated = evaluate_node(preoptimized)) {
+    if (auto evaluated = expr::evaluate(preoptimized, {}, {})) {
         return expr::make_number_literal_node(
-            std::to_string(*evaluated),
+            make_number_representation(*evaluated),
             root->location
         );
     }
