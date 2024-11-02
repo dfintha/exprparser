@@ -71,7 +71,7 @@ void evaluate_and_print(
     }
 }
 
-static int process_expression(std::string_view expression) {
+static bool process_expression(std::string_view expression) {
     separator("Tokenization");
     using tokenize_fn = expr::tokenizer_result (*)(std::string_view);
     auto tokens = process_and_print<tokenize_fn>(
@@ -82,7 +82,7 @@ static int process_expression(std::string_view expression) {
     );
 
     if (!tokens)
-        return EXIT_FAILURE;
+        return false;
 
     separator("Parsing");
     auto parsed = process_and_print(
@@ -94,7 +94,7 @@ static int process_expression(std::string_view expression) {
     evaluate_and_print(parsed, "parsed");
 
     if (!parsed)
-        return EXIT_FAILURE;
+        return false;
 
     separator("Optimization");
     auto optimized = process_and_print(
@@ -114,7 +114,7 @@ static int process_expression(std::string_view expression) {
     );
     evaluate_and_print(derived, "derived");
 
-    return EXIT_SUCCESS;
+    return true;
 }
 
 static void initialize_completion() {
@@ -190,13 +190,13 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    int status = EXIT_SUCCESS;
     for (int i = 0; i < argc; ++i) {
         std::cout << '"' << argv[i] << "\"\n\n";
-        const int result = process_expression(std::string_view(argv[i]));
-        if (result != EXIT_SUCCESS)
-            return result;
+        if (!process_expression(std::string_view(argv[i])))
+            status = EXIT_FAILURE;
         std::cout << "\n\n";
     }
 
-    return EXIT_SUCCESS;
+    return status;
 }
