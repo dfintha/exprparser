@@ -80,10 +80,9 @@ static int process_expression(std::string_view expression) {
         expr::tokenize,
         expression
     );
-    if (!tokens) {
-        std::cout << "Failed to tokenize: "
-                  << tokens.error().description << "\n\n";
-    }
+
+    if (!tokens)
+        return EXIT_FAILURE;
 
     separator("Parsing");
     auto parsed = process_and_print(
@@ -93,6 +92,9 @@ static int process_expression(std::string_view expression) {
         std::move(*tokens)
     );
     evaluate_and_print(parsed, "parsed");
+
+    if (!parsed)
+        return EXIT_FAILURE;
 
     separator("Optimization");
     auto optimized = process_and_print(
