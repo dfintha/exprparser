@@ -41,7 +41,7 @@ namespace expr {
 
     struct error {
         error_code code;
-        expr::location_t location;
+        location_t location;
         std::string description;
     };
 

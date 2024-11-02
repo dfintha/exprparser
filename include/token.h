@@ -10,7 +10,6 @@
 namespace expr {
     struct token_t final {
         enum class type_t {
-            BOOLEAN,
             NUMBER,
             IDENTIFIER,
             PLUS,
@@ -34,9 +33,7 @@ namespace expr {
 }
 
 std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t kind);
-
 std::ostream& operator<<(std::ostream& stream, const expr::token_t& token);
-
 std::ostream& operator<<(std::ostream& stream, const expr::token_list& list);
 
 #endif

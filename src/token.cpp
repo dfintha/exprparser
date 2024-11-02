@@ -4,8 +4,6 @@
 
 std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
     switch (type) {
-        case expr::token_t::type_t::BOOLEAN:
-            return stream << "BooleanLiteral";
         case expr::token_t::type_t::NUMBER:
             return stream << "NumberLiteral";
         case expr::token_t::type_t::IDENTIFIER:

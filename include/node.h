@@ -17,7 +17,6 @@ namespace expr {
             BINARY_OP,
             UNARY_OP,
             NUMBER,
-            BOOLEAN,
             VARIABLE,
             FUNCTION_CALL,
             ASSIGNMENT,
@@ -31,11 +30,6 @@ namespace expr {
         friend bool operator==(const node_t& lhs, const node_t& rhs);
         friend bool operator!=(const node_t& lhs, const node_t& rhs);
     };
-
-    node_ptr make_boolean_literal_node(
-        std::string content,
-        location_t location
-    );
 
     node_ptr make_number_literal_node(std::string content, location_t location);
 
@@ -67,7 +61,6 @@ namespace expr {
 }
 
 std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t kind);
-
 std::ostream& operator<<(std::ostream& stream, const expr::node_ptr& token);
 
 #endif

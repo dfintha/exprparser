@@ -18,7 +18,6 @@ The software uses features of the C++17 standard, so when building in with
 another build system, such standard such be given.
 
 `exprparser` supports the following "language features": numeric literals,
-boolean literals, variable identifiers, function calls, unary numeric operators
-(`+`, `-`), binary numeric operators (`+`, `-`, `*`, `/`, `^`), and
-sub-expressions (`( ... )`). Boolean literals are parsed as numeric 1 or 0
-expressions.
+variable identifiers, variable assignments, function calls, unary numeric
+operators (`+`, `-`), binary numeric operators (`+`, `-`, `*`, `/`, `^`), and
+sub-expressions (`( ... )`).

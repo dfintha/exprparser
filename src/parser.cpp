@@ -94,13 +94,6 @@ expr::parser_result expression_parser_impl::parse_function_call() {
 }
 
 expr::parser_result expression_parser_impl::parse_primary() {
-    if (match({token_type_t::BOOLEAN})) {
-        return expr::make_number_literal_node(
-            previous().content == "true" ? "1" : "0",
-            previous().location
-        );
-    }
-
     if (match({token_type_t::NUMBER})) {
         return expr::make_number_literal_node(
             previous().content,
@@ -299,21 +292,19 @@ expr::location_t expression_parser_impl::get_source_range() const {
     };
 }
 
-namespace expr {
-    parser_result parse(token_list&& tokens) {
-        auto parser = expression_parser_impl(std::move(tokens));
-        auto result = parser.parse();
+expr::parser_result expr::parse(expr::token_list&& tokens) {
+    auto parser = expression_parser_impl(std::move(tokens));
+    auto result = parser.parse();
 
-        if (!result)
-            return result;
+    if (!result)
+        return result;
 
-        if (*result != nullptr)
-            return std::move(*result);
+    if (*result != nullptr)
+        return std::move(*result);
 
-        return expr::error {
-            expr::error_code::PARSER_GENERAL_ERROR,
-            parser.get_source_range(),
-            "Unknown error occurred during token list parsing."
-        };
-    }
+    return expr::error {
+        expr::error_code::PARSER_GENERAL_ERROR,
+        parser.get_source_range(),
+        "Unknown error occurred during token list parsing."
+    };
 }

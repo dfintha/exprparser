@@ -76,14 +76,13 @@ static std::optional<expr::token_t> extract_single(
     return expr::token_t{type, std::string{current}, {location, location + 1}};
 }
 
-static expr::token_t extract_word(std::string&& content, size_t location) {
-    static const std::vector<std::string> booleans = { "true", "false" };
-    const auto lookup = std::find(booleans.begin(), booleans.end(), content);
-    const bool match = lookup != booleans.end();
+static expr::token_t extract_identifier(
+    std::string&& content,
+    size_t location
+) {
     const size_t length = content.length();
     return expr::token_t{
-        match ? expr::token_t::type_t::BOOLEAN
-              : expr::token_t::type_t::IDENTIFIER,
+        expr::token_t::type_t::IDENTIFIER,
         std::move(content),
         {location, location + length}
     };
@@ -123,7 +122,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
                     content += current;
                 } else {
                     result.push_back(
-                        extract_word(std::move(content), location)
+                        extract_identifier(std::move(content), location)
                     );
                     state = state_t::NORMAL;
                     --i;
@@ -164,16 +163,14 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
     return result;
 }
 
-namespace expr {
-    tokenizer_result tokenize(const char *expression) {
-        return ::tokenize(expression, std::strlen(expression));
-    }
+expr::tokenizer_result expr::tokenize(const char *expression) {
+    return ::tokenize(expression, std::strlen(expression));
+}
 
-    tokenizer_result tokenize(const std::string& expression) {
-        return ::tokenize(expression.c_str(), expression.length());
-    }
+expr::tokenizer_result expr::tokenize(const std::string& expression) {
+    return ::tokenize(expression.c_str(), expression.length());
+}
 
-    tokenizer_result tokenize(std::string_view expression) {
-        return ::tokenize(expression.data(), expression.length());
-    }
+expr::tokenizer_result expr::tokenize(std::string_view expression) {
+    return ::tokenize(expression.data(), expression.length());
 }

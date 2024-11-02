@@ -30,9 +30,6 @@ static expr::derivator_result derive_primary(const expr::node_ptr& root) {
     if (root->type == expr::node_t::type_t::NUMBER)
         return expr::make_number_literal_node("0", {});
 
-    if (root->type == expr::node_t::type_t::BOOLEAN)
-        return expr::make_number_literal_node("0", {});
-
     if (root->type == expr::node_t::type_t::VARIABLE)
         return expr::make_number_literal_node("1", {});
 
@@ -384,7 +381,7 @@ static expr::derivator_result derive_logarithms(const expr::node_ptr& root) {
     );
 }
 
-const derivator_table& function_derivators() {
+static const derivator_table& function_derivators() {
     static const auto table = derivator_table{
         {"sin", derive_sin},
         {"cos", derive_cos},
@@ -434,7 +431,6 @@ expr::derivator_result expr::derive(const expr::node_ptr& root) {
         FOR_NODE(BINARY_OP, derive_binary_op(root));
         FOR_NODE(UNARY_OP, derive_unary_op(root));
         FOR_NODE(NUMBER, derive_primary(root));
-        FOR_NODE(BOOLEAN, derive_primary(root));
         FOR_NODE(VARIABLE, derive_primary(root));
         FOR_NODE(FUNCTION_CALL, derive_function_call(root));
         FOR_NODE(ASSIGNMENT, derive_assignment(root));

@@ -12,7 +12,7 @@ namespace expr {
 
     using function_t = function_result (*)(
         const std::vector<double>&,
-        const expr::location_t&
+        const location_t&
     );
 
     struct function_definition_t {
