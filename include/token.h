@@ -21,7 +21,8 @@ namespace expr {
             CARET,
             OPENING_PARENTHESIS,
             CLOSING_PARENTHESIS,
-            COMMA
+            COMMA,
+            EQUALS
         };
 
         type_t type;

@@ -48,13 +48,9 @@ auto process_and_print(
 
 void evaluate_and_print(
     const expr::parser_result& root,
-    std::string_view tree_kind
+    std::string_view tree_kind,
+    expr::symbol_table& symbols
 ) {
-    static const auto symbols = expr::symbol_table{
-        {"pi", 3.141592653589793238},
-        {"e", 2.718281828459045235}
-    };
-
     if (!root)
         return;
 
@@ -72,6 +68,11 @@ void evaluate_and_print(
 }
 
 static bool process_expression(std::string_view expression) {
+    static auto symbols = expr::symbol_table{
+        {"pi", 3.141592653589793238},
+        {"e", 2.718281828459045235}
+    };
+
     separator("Tokenization");
     using tokenize_fn = expr::tokenizer_result (*)(std::string_view);
     auto tokens = process_and_print<tokenize_fn>(
@@ -91,7 +92,7 @@ static bool process_expression(std::string_view expression) {
         expr::parse,
         std::move(*tokens)
     );
-    evaluate_and_print(parsed, "parsed");
+    evaluate_and_print(parsed, "parsed", symbols);
 
     if (!parsed)
         return false;
@@ -103,7 +104,7 @@ static bool process_expression(std::string_view expression) {
         expr::optimize,
         *parsed
     );
-    evaluate_and_print(optimized, "optimized");
+    evaluate_and_print(optimized, "optimized", symbols);
 
     separator("Derivation");
     auto derived = process_and_print(
@@ -112,7 +113,7 @@ static bool process_expression(std::string_view expression) {
         expr::derive,
         std::move(*parsed)
     );
-    evaluate_and_print(derived, "derived");
+    evaluate_and_print(derived, "derived", symbols);
 
     return true;
 }

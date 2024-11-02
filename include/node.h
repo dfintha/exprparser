@@ -20,6 +20,7 @@ namespace expr {
             BOOLEAN,
             VARIABLE,
             FUNCTION_CALL,
+            ASSIGNMENT,
         };
 
         type_t type;
@@ -55,6 +56,12 @@ namespace expr {
     node_ptr make_function_call_node(
         std::string content,
         std::vector<node_ptr>&& parameters,
+        location_t location
+    );
+
+    node_ptr make_assignment_node(
+        node_ptr&& left,
+        node_ptr&& right,
         location_t location
     );
 }

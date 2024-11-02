@@ -13,7 +13,7 @@ static expr::function_result call_function(
     expr::function_t function,
     expr::location_t location,
     const std::vector<expr::node_ptr>& parameters,
-    const expr::symbol_table& symbols,
+    expr::symbol_table& symbols,
     const expr::function_table& functions
 ) {
     bool failed = false;
@@ -43,6 +43,8 @@ static expr::function_result call_function(
 
 static int get_precedence_score(const expr::node_ptr& node) {
     switch (node->type) {
+        case expr::node_t::type_t::ASSIGNMENT:
+            return 0;
         case expr::node_t::type_t::BINARY_OP: {
             if (node->content == "+" || node->content == "-")
                 return 1;
@@ -104,6 +106,12 @@ static std::string function_call_to_expression_string(
     return result;
 }
 
+static std::string assignment_to_expression_string(const expr::node_ptr& node) {
+    auto lhs = to_expression_string(node->children[0]);
+    auto rhs = to_expression_string(node->children[1]);
+    return lhs + " = " + rhs;
+}
+
 static std::optional<double> parse_binary_number(const std::string& content) {
     if (content.substr(0, 2) != "0b")
         return std::nullopt;
@@ -125,7 +133,7 @@ static std::optional<double> parse_octal_number(const std::string& content) {
 namespace expr {
     evaluator_result evaluate(
         const node_ptr& node,
-        const symbol_table& symbols,
+        symbol_table& symbols,
         const function_table& functions
     ) {
         using binary_operator = std::function<double(double, double)>;
@@ -217,6 +225,10 @@ namespace expr {
                     symbols,
                     functions
                 );
+            case node_t::type_t::ASSIGNMENT:
+                auto result = evaluate(node->children[1], symbols, functions);
+                symbols[node->children[0]->content] = result;
+                return result;
         }
 
         // Unreachable
@@ -225,6 +237,11 @@ namespace expr {
             location_t{0, 0},
             "The evaluator has reached a supposedly unreachable code path."
         };
+    }
+
+    evaluator_result evaluate_parse_time(const node_ptr& node) {
+        symbol_table table;
+        return evaluate(node, table, {});
     }
 
     std::string to_expression_string(const node_ptr& root) {
@@ -239,6 +256,8 @@ namespace expr {
                 return root->content;
             case expr::node_t::type_t::FUNCTION_CALL:
                 return function_call_to_expression_string(root);
+            case expr::node_t::type_t::ASSIGNMENT:
+                return assignment_to_expression_string(root);
         }
 
         // Unreachable

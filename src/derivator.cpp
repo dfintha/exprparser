@@ -417,6 +417,10 @@ static expr::derivator_result derive_function_call(const expr::node_ptr& root) {
     };
 }
 
+static expr::derivator_result derive_assignment(const expr::node_ptr& root) {
+    return derive(root->children[1]);
+}
+
 expr::derivator_result expr::derive(const expr::node_ptr& root) {
 #define FOR_NODE(NODE_TYPE, ...)                        \
     case expr::node_t::type_t::NODE_TYPE: {             \
@@ -433,6 +437,7 @@ expr::derivator_result expr::derive(const expr::node_ptr& root) {
         FOR_NODE(BOOLEAN, derive_primary(root));
         FOR_NODE(VARIABLE, derive_primary(root));
         FOR_NODE(FUNCTION_CALL, derive_function_call(root));
+        FOR_NODE(ASSIGNMENT, derive_assignment(root));
     }
 
 #undef FOR_NODE

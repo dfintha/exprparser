@@ -111,6 +111,24 @@ namespace expr {
         );
         return result;
     }
+
+    node_ptr make_assignment_node(
+        node_ptr&& left,
+        node_ptr&& right,
+        location_t location
+    ) {
+        node_ptr result = std::unique_ptr<node_t>(
+            new node_t{
+                node_t::type_t::ASSIGNMENT,
+                "=",
+                {},
+                location
+            }
+        );
+        result->children.push_back(std::move(left));
+        result->children.push_back(std::move(right));
+        return result;
+    }
 }
 
 std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
@@ -127,6 +145,8 @@ std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
             return stream << "Variable";
         case expr::node_t::type_t::FUNCTION_CALL:
             return stream << "FunctionCall";
+        case expr::node_t::type_t::ASSIGNMENT:
+            return stream << "Assignment";
     }
 
     // Unreachable

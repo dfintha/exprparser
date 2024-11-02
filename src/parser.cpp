@@ -10,6 +10,7 @@ public:
     expr::location_t get_source_range() const;
 
 private:
+    expr::parser_result parse_assignment();
     expr::parser_result parse_function_call();
     expr::parser_result parse_primary();
     expr::parser_result parse_unary();
@@ -182,6 +183,7 @@ expr::parser_result expression_parser_impl::parse_power() {
             expr::location_t{begin, previous().location.end}
         );
     }
+
     return expression;
 }
 
@@ -241,8 +243,43 @@ expr::parser_result expression_parser_impl::parse_term() {
     return expression;
 }
 
+expr::parser_result expression_parser_impl::parse_assignment() {
+    auto lhs = parse_term();
+    if (!lhs)
+        return lhs;
+
+    expr::node_ptr expression = std::move(*lhs);
+    while (match({token_type_t::EQUALS})) {
+        const auto begin = expression->location.begin;
+        auto content = previous().content;
+
+        if (expression->type != expr::node_t::type_t::VARIABLE) {
+            return expr::error {
+                expr::error_code::PARSER_NON_VARIABLE_ASSIGNMENT,
+                _position->location,
+                "Only variables can be assigned."
+            };
+        }
+
+        auto rhs = parse_term();
+        if (!rhs)
+            return rhs;
+
+        expression = expr::make_assignment_node(
+            std::move(expression),
+            std::move(*rhs),
+            expr::location_t{begin, previous().location.end}
+        );
+    }
+
+    return expression;
+}
+
 expr::parser_result expression_parser_impl::parse() {
-    auto result = parse_term();
+    auto result = parse_assignment();
+    if (!result)
+        return result;
+
     if (_position != _tokens.end()) {
         return expr::error {
             expr::error_code::PARSER_PARTIAL_PARSE,
@@ -251,6 +288,7 @@ expr::parser_result expression_parser_impl::parse() {
             "Extraneous parentheses or missing operands?"
         };
     }
+
     return result;
 }
 

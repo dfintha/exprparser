@@ -66,6 +66,9 @@ static std::optional<expr::token_t> extract_single(
         case ',':
             type = expr::token_t::type_t::COMMA;
             break;
+        case '=':
+            type = expr::token_t::type_t::EQUALS;
+            break;
         default:
             return std::nullopt;
     }

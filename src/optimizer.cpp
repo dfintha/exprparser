@@ -36,7 +36,7 @@ static std::optional<expr::optimizer_result> make_optimized_addition(
     expr::node_ptr& original
 ) {
     for (size_t i = 0; i < original->children.size(); ++i) {
-        const auto value = expr::evaluate(original->children[i], {}, {});
+        const auto value = expr::evaluate_parse_time(original->children[i]);
 
         // Addition of 0 is a no-op both ways.
         if (value && is_near(*value, 0))
@@ -53,8 +53,8 @@ static std::optional<expr::optimizer_result> make_optimized_subtraction(
     if (are_binary_operands_the_same(original->children))
         return expr::make_number_literal_node("0", location);
 
-    const auto value_0 = expr::evaluate(original->children[0], {}, {});
-    const auto value_1 = expr::evaluate(original->children[1], {}, {});
+    const auto value_0 = expr::evaluate_parse_time(original->children[0]);
+    const auto value_1 = expr::evaluate_parse_time(original->children[1]);
 
     // Subtraction of 0 is a no-op.
     if (value_1 && is_near(*value_1, 0))
@@ -90,7 +90,7 @@ static std::optional<expr::optimizer_result> make_optimized_multiplication(
     }
 
     for (size_t i = 0; i < original->children.size(); ++i) {
-        const auto value = expr::evaluate(original->children[i], {}, {});
+        const auto value = expr::evaluate_parse_time(original->children[i]);
 
         // Multiplication with 0 results in 0.
         if (value && is_near(*value, 0))
@@ -122,8 +122,8 @@ static std::optional<expr::optimizer_result> make_optimized_division(
         return  expr::make_number_literal_node("1", location);
     }
 
-    const auto value_0 = expr::evaluate(original->children[0], {}, {});
-    const auto value_1 = expr::evaluate(original->children[1], {}, {});
+    const auto value_0 = expr::evaluate_parse_time(original->children[0]);
+    const auto value_1 = expr::evaluate_parse_time(original->children[1]);
 
     // Division of 0 is always 0.
     if (value_0 && is_near(*value_0, 0))
@@ -149,7 +149,7 @@ static std::optional<expr::optimizer_result> make_optimized_exponentiation(
     expr::node_ptr& original,
     const expr::location_t location
 ) {
-    const auto value = expr::evaluate(original->children[1], {}, {});
+    const auto value = expr::evaluate_parse_time(original->children[1]);
 
     // The 0th power of every number is 1.
     if (value && is_near(*value, 0))
@@ -180,7 +180,7 @@ static expr::optimizer_result make_optimized_binary_op(
 
     // If every operand is a number, the expression can be evaluated parse-time.
     if (are_all_children_numbers(original->children)) {
-        const auto value = expr::evaluate(original, {}, {});
+        const auto value = expr::evaluate_parse_time(original);
         if (value) {
             return expr::make_number_literal_node(
                 make_number_representation(*value),
@@ -248,6 +248,15 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
         };
     }
 
+    // We don't want to optimize assignments away.
+    if (root->type == expr::node_t::type_t::ASSIGNMENT) {
+        return expr::make_assignment_node(
+            std::move(children[0]),
+            std::move(children[1]),
+            root->location
+        );
+    }
+
     // We shortcut the whole optimization if the expression can be evaluated
     // parse-time. We do this after children are optimized so some variables
     // may be optimized out (e.g. x - x is always 0 but if we try to evaluate
@@ -260,7 +269,7 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
             root->location
         }
     };
-    if (auto evaluated = expr::evaluate(preoptimized, {}, {})) {
+    if (auto evaluated = expr::evaluate_parse_time(preoptimized)) {
         return expr::make_number_literal_node(
             make_number_representation(*evaluated),
             root->location
@@ -279,7 +288,7 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
     // Both can be evaluated during parse-time.
     if (root->type == expr::node_t::type_t::UNARY_OP) {
         if (root->children[0]->type == expr::node_t::type_t::NUMBER) {
-            if (const auto value = expr::evaluate(root, {}, {})) {
+            if (const auto value = expr::evaluate_parse_time(root)) {
                 return expr::make_number_literal_node(
                     make_number_representation(*value),
                     root->location
