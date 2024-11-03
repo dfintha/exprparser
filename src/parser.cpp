@@ -1,6 +1,5 @@
 #include "parser.h"
 
-#include <iostream>
 #include <unordered_set>    // std::unordered_set
 
 class expression_parser_impl final {
@@ -10,13 +9,13 @@ public:
     expr::location_t get_source_range() const;
 
 private:
-    expr::parser_result parse_assignment();
     expr::parser_result parse_function_call();
     expr::parser_result parse_primary();
     expr::parser_result parse_unary();
     expr::parser_result parse_power();
     expr::parser_result parse_factor();
     expr::parser_result parse_term();
+    expr::parser_result parse_assignment();
 
 private:
     using token_type_t = expr::token_t::type_t;
