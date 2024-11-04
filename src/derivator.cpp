@@ -3,10 +3,13 @@
 
 #include <unordered_map>    // std::unordered_map
 
-using namespace std::literals;
-
 using derivator_t = expr::derivator_result (*)(const expr::node_ptr&);
 using derivator_table = std::unordered_map<std::string, derivator_t>;
+
+static constexpr expr::location_t empty_location = expr::location_t{
+    .begin = 0,
+    .end = 0
+};
 
 static expr::node_ptr clone_node(const expr::node_ptr& node) {
     std::vector<expr::node_ptr> children;
@@ -15,12 +18,17 @@ static expr::node_ptr clone_node(const expr::node_ptr& node) {
     }
 
     return expr::node_ptr(
-        new expr::node_t{node->type, node->content, std::move(children), {}}
+        new expr::node_t{
+            .type = node->type,
+            .content = node->content,
+            .children = std::move(children),
+            .location = empty_location
+        }
     );
 }
 
 static void erase_location(expr::node_ptr& node) {
-    node->location = {};
+    node->location = empty_location;
     for (auto& child : node->children) {
         erase_location(child);
     }
@@ -28,15 +36,15 @@ static void erase_location(expr::node_ptr& node) {
 
 static expr::derivator_result derive_primary(const expr::node_ptr& root) {
     if (root->type == expr::node_t::type_t::NUMBER)
-        return expr::make_number_literal_node("0", {});
+        return expr::make_number_literal_node("0", empty_location);
 
     if (root->type == expr::node_t::type_t::VARIABLE)
-        return expr::make_number_literal_node("1", {});
+        return expr::make_number_literal_node("1", empty_location);
 
     return expr::error{
-        expr::error_code::DERIVATOR_GENERAL_ERROR,
-        root->location,
-        "Attempted derivation of non-primary node as primary."
+        .code = expr::error_code::DERIVATOR_GENERAL_ERROR,
+        .location = root->location,
+        .description = "Attempted derivation of non-primary node as primary."
     };
 }
 
@@ -50,7 +58,7 @@ static expr::derivator_result derive_unary_op(const expr::node_ptr& root) {
     return expr::make_unary_operator_node(
         root->content,
         std::move(*operand),
-        {}
+        empty_location
     );
 }
 
@@ -72,7 +80,7 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                 root->content,
                 std::move(*left_d),
                 std::move(*right_d),
-                {}
+                empty_location
             );
         }
         break;
@@ -91,7 +99,7 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                     root->content,
                     std::move(*left),
                     std::move(*right_d),
-                    {}
+                    empty_location
                 );
             }
 
@@ -107,7 +115,7 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                     root->content,
                     std::move(*right),
                     std::move(*left_d),
-                    {}
+                    empty_location
                 );
             }
 
@@ -115,14 +123,14 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                 "*",
                 std::move(*left_d),
                 std::move(*right),
-                {}
+                empty_location
             );
 
             auto second = expr::make_binary_operator_node(
                 "*",
                 std::move(*left),
                 std::move(*right_d),
-                {}
+                empty_location
             );
 
             // Otherwise, we have to apply the generic derivation rule for
@@ -132,7 +140,7 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                     "+",
                     std::move(first),
                     std::move(second),
-                    {}
+                    empty_location
                 );
             }
 
@@ -143,7 +151,7 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                 "-",
                 std::move(first),
                 std::move(second),
-                {}
+                empty_location
             );
 
             auto fourth = expr::optimize(root->children[1]);
@@ -157,10 +165,10 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                 expr::make_binary_operator_node(
                     "^",
                     std::move(*fourth),
-                    expr::make_number_literal_node("2", {}),
-                    {}
+                    expr::make_number_literal_node("2", empty_location),
+                    empty_location
                 ),
-                {}
+                empty_location
             );
         }
 
@@ -177,12 +185,12 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
                         expr::make_binary_operator_node(
                             "-",
                             clone_node(root->children[1]),
-                            expr::make_number_literal_node("1", {}),
-                            {}
+                            expr::make_number_literal_node("1", empty_location),
+                            empty_location
                         ),
-                        {}
+                        empty_location
                     ),
-                    {}
+                    empty_location
                 );
             }
 
@@ -195,16 +203,20 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
             return expr::make_binary_operator_node(
                 "*",
                 clone_node(root),
-                expr::make_function_call_node("ln", std::move(children), {}),
-                {}
+                expr::make_function_call_node(
+                    "ln",
+                    std::move(children),
+                    empty_location
+                ),
+                empty_location
             );
         }
     }
 
     return expr::error{
-        expr::error_code::DERIVATOR_GENERAL_ERROR,
-        root->location,
-        "Unsupported binary operator: '"s + root->content +  "'"
+        .code = expr::error_code::DERIVATOR_GENERAL_ERROR,
+        .location = root->location,
+        .description = "Unsupported binary operator: '" + root->content +  "'"
     };
 }
 
@@ -215,7 +227,7 @@ static expr::derivator_result derive_sin(const expr::node_ptr& root) {
     return expr::make_function_call_node(
         "cos",
         std::move(children),
-        {}
+        empty_location
     );
 }
 
@@ -225,8 +237,12 @@ static expr::derivator_result derive_cos(const expr::node_ptr& root) {
 
     return expr::make_unary_operator_node(
         "-",
-        expr::make_function_call_node("sin", std::move(children), {}),
-        {}
+        expr::make_function_call_node(
+            "sin",
+            std::move(children),
+            empty_location
+        ),
+        empty_location
     );
 }
 
@@ -236,18 +252,18 @@ static expr::derivator_result derive_tan(const expr::node_ptr& root) {
 
     return expr::make_binary_operator_node(
         "/",
-        expr::make_number_literal_node("1", {}),
+        expr::make_number_literal_node("1", empty_location),
         expr::make_binary_operator_node(
             "^",
             expr::make_function_call_node(
                 "cos",
                 std::move(children),
-                {}
+                empty_location
             ),
-            expr::make_number_literal_node("2", {}),
-            {}
+            expr::make_number_literal_node("2", empty_location),
+            empty_location
         ),
-        {}
+        empty_location
     );
 }
 
@@ -259,20 +275,20 @@ static expr::derivator_result derive_ctg(const expr::node_ptr& root) {
         "-",
         expr::make_binary_operator_node(
             "/",
-            expr::make_number_literal_node("1", {}),
+            expr::make_number_literal_node("1", empty_location),
             expr::make_binary_operator_node(
                 "^",
                 expr::make_function_call_node(
                     "sin",
                     std::move(children),
-                    {}
+                    empty_location
                 ),
-                expr::make_number_literal_node("2", {}),
-                {}
+                expr::make_number_literal_node("2", empty_location),
+                empty_location
             ),
-            {}
+            empty_location
         ),
-        {}
+        empty_location
     );
 }
 
@@ -285,9 +301,17 @@ static expr::derivator_result derive_sec(const expr::node_ptr& root) {
 
     return expr::make_binary_operator_node(
         "*",
-        expr::make_function_call_node("sec", std::move(children_sec), {}),
-        expr::make_function_call_node("tan", std::move(children_tan), {}),
-        {}
+        expr::make_function_call_node(
+            "sec",
+            std::move(children_sec),
+            empty_location
+        ),
+        expr::make_function_call_node(
+            "tan",
+            std::move(children_tan),
+            empty_location
+        ),
+        empty_location
     );
 }
 
@@ -302,19 +326,27 @@ static expr::derivator_result derive_csc(const expr::node_ptr& root) {
         "*",
         expr::make_unary_operator_node(
             "-",
-            expr::make_function_call_node("csc", std::move(children_csc), {}),
-            {}
+            expr::make_function_call_node(
+                "csc",
+                std::move(children_csc),
+                empty_location
+            ),
+            empty_location
         ),
-        expr::make_function_call_node("ctg", std::move(children_ctg), {}),
-        {}
+        expr::make_function_call_node(
+            "ctg",
+            std::move(children_ctg),
+            empty_location
+        ),
+        empty_location
     );
 }
 
 static expr::derivator_result derive_nonderivables(const expr::node_ptr& root) {
     return expr::error{
-        expr::error_code::DERIVATOR_FUNCTION_NOT_DERIVABLE,
-        root->location,
-        "Function "s + root->content + "(...) can not be derived."
+        .code = expr::error_code::DERIVATOR_FUNCTION_NOT_DERIVABLE,
+        .location = root->location,
+        .description = "Function " + root->content + "(...) can't be derived."
     };
 }
 
@@ -323,9 +355,9 @@ static expr::derivator_result derive_logarithms(const expr::node_ptr& root) {
     if (root->content == "ln") {
         return expr::make_binary_operator_node(
             "/",
-            expr::make_number_literal_node("1", {}),
+            expr::make_number_literal_node("1", empty_location),
             clone_node(root->children[0]),
-            {}
+            empty_location
         );
     }
 
@@ -338,9 +370,9 @@ static expr::derivator_result derive_logarithms(const expr::node_ptr& root) {
     } else {
         if (root->children.size() != 2)
             return expr::error{
-                expr::error_code::DERIVATOR_WRONG_ARGUMENT_COUNT,
-                root->location,
-                "Function log(x, base) takes 2 argument(s)."
+                .code = expr::error_code::DERIVATOR_WRONG_ARGUMENT_COUNT,
+                .location = root->location,
+                .description = "Function log(x, base) takes 2 argument(s)."
             };
 
         auto base = expr::optimize(root->children[1]);
@@ -350,10 +382,10 @@ static expr::derivator_result derive_logarithms(const expr::node_ptr& root) {
         erase_location(*base);
         if ((*base)->type != expr::node_t::type_t::NUMBER) {
             return expr::error{
-                expr::error_code::DERIVATOR_CANT_BE_DONE_AT_PARSE_TIME,
-                root->location,
-                "Can't derive logarithm functions with an unknown base at "
-                "parse time."
+                .code = expr::error_code::DERIVATOR_CANT_BE_DONE_AT_PARSE_TIME,
+                .location = root->location,
+                .description = "Can't derive logarithm functions with an "
+                               "unknown base at parse time."
             };
         }
 
@@ -361,23 +393,29 @@ static expr::derivator_result derive_logarithms(const expr::node_ptr& root) {
     }
 
     std::vector<expr::node_ptr> children;
-    children.push_back(expr::make_number_literal_node(base_literal, {}));
+    children.push_back(
+        expr::make_number_literal_node(base_literal, empty_location)
+    );
 
     return expr::make_binary_operator_node(
         "*",
         expr::make_binary_operator_node(
             "/",
-            expr::make_number_literal_node("1", {}),
-            expr::make_function_call_node("ln", std::move(children), {}),
-            {}
+            expr::make_number_literal_node("1", empty_location),
+            expr::make_function_call_node(
+                "ln",
+                std::move(children),
+                empty_location
+            ),
+            empty_location
         ),
         expr::make_binary_operator_node(
             "/",
-            expr::make_number_literal_node("1", {}),
+            expr::make_number_literal_node("1", empty_location),
             clone_node(root->children[0]),
-            {}
+            empty_location
         ),
-        {}
+        empty_location
     );
 }
 
@@ -408,9 +446,10 @@ static expr::derivator_result derive_function_call(const expr::node_ptr& root) {
         return derivators.at(root->content)(root);
 
     return expr::error{
-        expr::error_code::DERIVATOR_GENERAL_ERROR,
-        root->location,
-        "Derivation is not implemented for "s + root->content + "(...)."
+        .code = expr::error_code::DERIVATOR_GENERAL_ERROR,
+        .location = root->location,
+        .description = "Derivation is not implemented for " + root->content +
+                       "(...)."
     };
 }
 
@@ -439,8 +478,8 @@ expr::derivator_result expr::derive(const expr::node_ptr& root) {
 #undef FOR_NODE
 
     return expr::error{
-        expr::error_code::DERIVATOR_GENERAL_ERROR,
-        root->location,
-        "Function derivation is not exhausitve for all node types."
+        .code = expr::error_code::DERIVATOR_GENERAL_ERROR,
+        .location = root->location,
+        .description = "Derivation is not exhausitve for all node types."
     };
 }

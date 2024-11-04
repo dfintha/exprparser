@@ -33,9 +33,10 @@ static expr::function_result call_function(
     );
     if (failed) {
         return expr::error{
-            expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
-            location,
-            "Failed to evaluate function arguments for '"s + name + "()'."
+            .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
+            .location = location,
+            .description = "Failed to evaluate function arguments for '"s +
+                           name + "()'."
         };
     }
     return function(evaluated, location);
@@ -81,9 +82,10 @@ static std::string binary_op_to_expression_string(const expr::node_ptr& node) {
 }
 
 static std::string unary_op_to_expression_string(const expr::node_ptr& node) {
-    const bool child_num = node->children[0]->type == expr::node_t::type_t::NUMBER;
-    const bool child_var = node->children[0]->type == expr::node_t::type_t::VARIABLE;
-    const bool child_primary = child_num || child_var;
+    const auto& type = node->children[0]->type;
+    const bool child_number = type == expr::node_t::type_t::NUMBER;
+    const bool child_variable = type == expr::node_t::type_t::VARIABLE;
+    const bool child_primary = child_number || child_variable;
     return node->content
         + (!child_primary ? "(" : "")
         + expr::to_expression_string(node->children[0])
@@ -163,9 +165,9 @@ expr::evaluator_result expr::evaluate(
             );
             if (!left || !right) {
                 return expr::error{
-                    expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
-                    node->location,
-                    "Failed to evaluate operand."
+                    .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
+                    .location = node->location,
+                    .description = "Failed to evaluate operand."
                 };
             }
             const auto& f = binary.at(node->content);
@@ -182,9 +184,9 @@ expr::evaluator_result expr::evaluate(
                 return f(*operand);
             }
             return expr::error{
-                expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
-                node->location,
-                "Failed to evaluate operand."
+                .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
+                .location = node->location,
+                .description = "Failed to evaluate operand."
             };
         }
         case expr::node_t::type_t::NUMBER: {
@@ -197,9 +199,9 @@ expr::evaluator_result expr::evaluate(
         case expr::node_t::type_t::VARIABLE:
             if (symbols.find(node->content) == symbols.end()) {
                 return expr::error{
-                    expr::error_code::EVALUATOR_UNDEFINED_VARIABLE,
-                    node->location,
-                    "Undefined variable '"s + node->content + "'."
+                    .code = expr::error_code::EVALUATOR_UNDEFINED_VARIABLE,
+                    .location = node->location,
+                    .description = "Undefined variable '" + node->content + "'."
                 };
             }
             return symbols.at(node->content);
@@ -207,9 +209,12 @@ expr::evaluator_result expr::evaluate(
             if (functions.find(node->content) == functions.end()) {
                 const auto& where = node->location.begin;
                 return expr::error{
-                    expr::error_code::EVALUATOR_UNDEFINED_FUNCTION,
-                    expr::location_t{where, where + node->content.length() - 1},
-                    "Undefined function '"s + node->content + "'."
+                    .code = expr::error_code::EVALUATOR_UNDEFINED_FUNCTION,
+                    .location = expr::location_t{
+                        .begin = where,
+                        .end = where + node->content.length() - 1
+                    },
+                    .description = "Undefined function '"s + node->content + "'."
                 };
             }
             return call_function(
@@ -228,15 +233,16 @@ expr::evaluator_result expr::evaluate(
 
     // Unreachable
     return expr::error{
-        expr::error_code::EVALUATOR_REACHED_UNREACHABLE_CODE_PATH,
-        expr::location_t{0, 0},
-        "The evaluator has reached a supposedly unreachable code path."
+        .code = expr::error_code::EVALUATOR_REACHED_UNREACHABLE_CODE_PATH,
+        .location = expr::location_t{.begin = 0, .end = 0},
+        .description = "The evaluator has reached a supposedly unreachable "
+                       "code path."
     };
 }
 
 expr::evaluator_result expr::evaluate_parse_time(const expr::node_ptr& node) {
     expr::symbol_table table;
-    return expr::evaluate(node, table, {});
+    return expr::evaluate(node, table, expr::function_table{});
 }
 
 std::string expr::to_expression_string(const expr::node_ptr& root) {

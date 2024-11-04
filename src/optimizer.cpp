@@ -242,9 +242,9 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
     auto children = optimize_children(root);
     if (children.size() != root->children.size()) {
         return expr::error {
-            expr::error_code::OPTIMIZER_FAILED_TO_OPTIMIZE_CHILD,
-            root->children[children.size()]->location,
-            "Failed to optimize child."
+            .code = expr::error_code::OPTIMIZER_FAILED_TO_OPTIMIZE_CHILD,
+            .location = root->children[children.size()]->location,
+            .description = "Failed to optimize child."
         };
     }
 
@@ -263,10 +263,10 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
     // the tree as-is we's fail since x can not be evaluated parse-time).
     auto preoptimized = std::unique_ptr<expr::node_t> {
         new expr::node_t {
-            root->type,
-            root->content,
-            optimize_children(root),
-            root->location
+            .type = root->type,
+            .content = root->content,
+            .children = optimize_children(root),
+            .location = root->location
         }
     };
     if (auto evaluated = expr::evaluate_parse_time(preoptimized)) {
@@ -301,10 +301,10 @@ expr::optimizer_result expr::optimize(const expr::node_ptr& root) {
     // optimized.
     return expr::node_ptr{
         new expr::node_t{
-            root->type,
-            root->content,
-            std::move(children),
-            root->location
+            .type = root->type,
+            .content = root->content,
+            .children = std::move(children),
+            .location = root->location
         }
     };
 }

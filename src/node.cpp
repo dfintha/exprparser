@@ -31,10 +31,10 @@ expr::node_ptr expr::make_number_literal_node(
 ) {
     return std::unique_ptr<expr::node_t>(
         new expr::node_t{
-            expr::node_t::type_t::NUMBER,
-            std::move(content),
-            {},
-            location
+            .type = expr::node_t::type_t::NUMBER,
+            .content = std::move(content),
+            .children = {},
+            .location = location
         }
     );
 }
@@ -45,10 +45,10 @@ expr::node_ptr expr::make_variable_node(
 ) {
     return std::unique_ptr<expr::node_t>(
         new expr::node_t{
-            expr::node_t::type_t::VARIABLE,
-            std::move(content),
-            {},
-            location
+            .type = expr::node_t::type_t::VARIABLE,
+            .content = std::move(content),
+            .children = {},
+            .location = location
         }
     );
 }
@@ -60,10 +60,10 @@ expr::node_ptr expr::make_unary_operator_node(
 ) {
     expr::node_ptr result = std::unique_ptr<expr::node_t>(
         new expr::node_t{
-            expr::node_t::type_t::UNARY_OP,
-            std::move(content),
-            {},
-            location
+            .type = expr::node_t::type_t::UNARY_OP,
+            .content = std::move(content),
+            .children = {},
+            .location = location
         }
     );
 
@@ -80,10 +80,10 @@ expr::node_ptr expr::make_binary_operator_node(
 ) {
     expr::node_ptr result = std::unique_ptr<expr::node_t>(
         new expr::node_t{
-            expr::node_t::type_t::BINARY_OP,
-            std::move(content),
-            {},
-            location
+            .type = expr::node_t::type_t::BINARY_OP,
+            .content = std::move(content),
+            .children = {},
+            .location = location
         }
     );
 
@@ -100,10 +100,10 @@ expr::node_ptr expr::make_function_call_node(
 ) {
     return std::unique_ptr<expr::node_t>(
         new expr::node_t{
-            expr::node_t::type_t::FUNCTION_CALL,
-            std::move(content),
-            std::move(parameters),
-            location
+            .type = expr::node_t::type_t::FUNCTION_CALL,
+            .content = std::move(content),
+            .children = std::move(parameters),
+            .location = location
         }
     );
 }
@@ -115,10 +115,10 @@ expr::node_ptr expr::make_assignment_node(
 ) {
     expr::node_ptr result = std::unique_ptr<expr::node_t>(
         new expr::node_t{
-            expr::node_t::type_t::ASSIGNMENT,
-            "=",
-            {},
-            location
+            .type = expr::node_t::type_t::ASSIGNMENT,
+            .content = "=",
+            .children = {},
+            .location = location
         }
     );
 

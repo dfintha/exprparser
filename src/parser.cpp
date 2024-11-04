@@ -73,9 +73,9 @@ expr::parser_result expression_parser_impl::parse_function_call() {
 
         if (!is_comma && !is_closing)
             return expr::error{
-                expr::error_code::PARSER_UNEXPECTED_TOKEN,
-                _position->location,
-                "Unexpected token."
+                .code = expr::error_code::PARSER_UNEXPECTED_TOKEN,
+                .location = _position->location,
+                .description = "Unexpected token."
             };
 
         if (_position != _tokens.end())
@@ -123,17 +123,17 @@ expr::parser_result expression_parser_impl::parse_primary() {
             return std::move(*subexpression);
         } else if (_position == _tokens.end()) {
             return expr::error {
-                expr::error_code::PARSER_UNCLOSED_PARENTHESES,
-                expr::location_t{begin, begin},
-                "Unclosed parenthesis."
+                .code = expr::error_code::PARSER_UNCLOSED_PARENTHESES,
+                .location = expr::location_t{begin, begin},
+                .description = "Unclosed parenthesis."
             };
         }
     }
 
     return expr::error {
-        expr::error_code::PARSER_UNEXPECTED_TOKEN,
-        _position->location,
-        "Unexpected token '" + _position->content + "'."
+        .code = expr::error_code::PARSER_UNEXPECTED_TOKEN,
+        .location = _position->location,
+        .description = "Unexpected token '" + _position->content + "'."
     };
 }
 
@@ -247,9 +247,9 @@ expr::parser_result expression_parser_impl::parse_assignment() {
 
         if (expression->type != expr::node_t::type_t::VARIABLE) {
             return expr::error {
-                expr::error_code::PARSER_NON_VARIABLE_ASSIGNMENT,
-                _position->location,
-                "Only variables can be assigned."
+                .code = expr::error_code::PARSER_NON_VARIABLE_ASSIGNMENT,
+                .location = _position->location,
+                .description = "Only variables can be assigned."
             };
         }
 
@@ -274,10 +274,10 @@ expr::parser_result expression_parser_impl::parse() {
 
     if (_position != _tokens.end()) {
         return expr::error {
-            expr::error_code::PARSER_PARTIAL_PARSE,
-            expr::location_t{0, previous().location.end - 1},
-            "Token list was only partially parsed. "
-            "Extraneous parentheses or missing operands?"
+            .code = expr::error_code::PARSER_PARTIAL_PARSE,
+            .location = expr::location_t{0, previous().location.end - 1},
+            .description = "Token list was only partially parsed. "
+                           "Extraneous parentheses or missing operands?"
         };
     }
 
@@ -302,8 +302,8 @@ expr::parser_result expr::parse(expr::token_list&& tokens) {
         return std::move(*result);
 
     return expr::error {
-        expr::error_code::PARSER_GENERAL_ERROR,
-        parser.get_source_range(),
-        "Unknown error occurred during token list parsing."
+        .code = expr::error_code::PARSER_GENERAL_ERROR,
+        .location = parser.get_source_range(),
+        .description = "Unknown error occurred during token list parsing."
     };
 }
