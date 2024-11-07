@@ -118,7 +118,16 @@ static bool process_expression(std::string_view expression) {
     return true;
 }
 
-static void initialize_completion() {
+static void print_builtins() {
+    std::cout << "Available built-in functions:\n";
+    std::cout << "    ";
+    for (const auto& [_, definition] : expr::functions()) {
+        std::cout << definition.signature << ' ';
+    }
+    std::cout << "\n\n";
+}
+
+static void initialize_gnu_readline() {
     auto completion = [](const char *text, int, int) {
         auto generator = [](const char *text, int state) {
             static bool initialized = false;
@@ -156,26 +165,21 @@ static void initialize_completion() {
 
     rl_bind_key('\t', rl_complete);
     rl_attempted_completion_function = completion;
+    using_history();
 }
 
 int main(int argc, char **argv) {
-    initialize_completion();
-    using_history();
-
-    --argc, ++argv;
+    initialize_gnu_readline();
 
     std::cout << expr::program_name << ' ' << expr::program_version
               << " (Built with "
               << expr::program_compiler << ' ' << expr::program_compiler_version
               << " on " << expr::program_platform << ")\n\n";
 
+    --argc, ++argv;
+
     if (argc == 0) {
-        std::cout << "Available built-in functions:\n";
-        std::cout << "    ";
-        for (const auto& [_, definition] : expr::functions()) {
-            std::cout << definition.signature << ' ';
-        }
-        std::cout << "\n\n";
+        print_builtins();
 
         while (true) {
             char *input = readline("exprparser> ");

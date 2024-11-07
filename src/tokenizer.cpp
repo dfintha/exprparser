@@ -5,7 +5,10 @@
 #include <cstring>          // std::strlen
 #include <optional>         // std::optional, std::nullopt
 
-static bool is_valid_numeric_part(const std::string& content, char current) {
+static bool is_valid_numeric_part(
+    const std::string& content,
+    char current
+) noexcept {
     if (content == "0" && (current == 'x' || current == 'b'))
         return true;
 

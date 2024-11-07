@@ -6,13 +6,13 @@
 #include <optional>         // std::optional
 #include <sstream>          // std::stringstream, iostream, iomanip
 
-static bool is_near(double lhs, double rhs) {
+static bool is_near(double lhs, double rhs) noexcept {
     return std::fabs(lhs - rhs) <= DBL_EPSILON;
 }
 
 static bool are_all_children_numbers(
     const std::vector<expr::node_ptr>& children
-) {
+) noexcept {
     for (const auto& child : children) {
         if (child->type != expr::node_t::type_t::NUMBER)
             return false;
@@ -22,7 +22,7 @@ static bool are_all_children_numbers(
 
 static bool are_binary_operands_the_same(
     const std::vector<expr::node_ptr>& operands
-) {
+) noexcept {
     return operands.size() == 2 && *operands[0] == *operands[1];
 }
 

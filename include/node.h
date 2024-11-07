@@ -27,36 +27,42 @@ namespace expr {
         std::vector<node_ptr> children;
         location_t location;
 
-        friend bool operator==(const node_t& lhs, const node_t& rhs);
-        friend bool operator!=(const node_t& lhs, const node_t& rhs);
+        friend bool operator==(const node_t& lhs, const node_t& rhs) noexcept;
+        friend bool operator!=(const node_t& lhs, const node_t& rhs) noexcept;
     };
 
-    node_ptr make_number_literal_node(std::string content, location_t location);
+    node_ptr make_number_literal_node(
+        std::string content,
+        const location_t& location
+    );
 
-    node_ptr make_variable_node(std::string content, location_t location);
+    node_ptr make_variable_node(
+        std::string content,
+        const location_t& location
+    );
 
     node_ptr make_unary_operator_node(
         std::string content,
         node_ptr&& operand,
-        location_t location);
+        const location_t& location);
 
     node_ptr make_binary_operator_node(
         std::string content,
         node_ptr&& left,
         node_ptr&& right,
-        location_t location
+        const location_t& location
     );
 
     node_ptr make_function_call_node(
         std::string content,
         std::vector<node_ptr>&& parameters,
-        location_t location
+        const location_t& location
     );
 
     node_ptr make_assignment_node(
         node_ptr&& left,
         node_ptr&& right,
-        location_t location
+        const location_t& location
     );
 
     std::string to_expression_string(const node_ptr& root);

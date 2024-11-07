@@ -3,11 +3,11 @@
 #include <cfloat>           // DBL_EPSILON
 #include <cmath>            // all math functions
 
-static double log_n(double x, double base) {
+static double log_n(double x, double base) noexcept {
     return log10(x) / log10(base);
 }
 
-static double sgn(double x) {
+static double sgn(double x) noexcept {
     return (fabs(x) < DBL_EPSILON) ? 0.0 : ((x < 0) ? -1.0 : 1.0);
 }
 

@@ -10,8 +10,8 @@ using namespace std::literals;
 
 static expr::function_result call_function(
     const std::string& name,
-    expr::function_t function,
-    expr::location_t location,
+    const expr::function_t& function,
+    const expr::location_t& location,
     const std::vector<expr::node_ptr>& parameters,
     expr::symbol_table& symbols,
     const expr::function_table& functions

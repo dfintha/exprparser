@@ -285,9 +285,12 @@ expr::parser_result expression_parser_impl::parse() {
 }
 
 expr::location_t expression_parser_impl::get_source_range() const {
+    if (_tokens.empty())
+        return expr::location_t{.begin = 0, .end = 0};
+
     return expr::location_t{
-        _tokens.front().location.begin,
-        _tokens.back().location.end
+        .begin = _tokens.front().location.begin,
+        .end = _tokens.back().location.end
     };
 }
 

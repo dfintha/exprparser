@@ -2,7 +2,7 @@
 
 #include <iostream>         // std::ostream
 
-static int get_precedence_score(const expr::node_ptr& node) {
+static int get_precedence_score(const expr::node_ptr& node) noexcept {
     switch (node->type) {
         case expr::node_t::type_t::ASSIGNMENT:
             return 0;
@@ -72,15 +72,18 @@ static std::string assignment_to_expression_string(const expr::node_ptr& node) {
     return lhs + " = " + rhs;
 }
 
-bool expr::operator==(const expr::node_t& lhs, const expr::node_t& rhs) {
+bool expr::operator==(
+    const expr::node_t& lhs,
+    const expr::node_t& rhs
+) noexcept {
     if (lhs.type != rhs.type)
-        return false;
-
-    if (lhs.content != rhs.content)
         return false;
 
     const size_t size = lhs.children.size();
     if (rhs.children.size() != size)
+        return false;
+
+    if (lhs.content != rhs.content)
         return false;
 
     for (size_t i = 0; i < size; ++i) {
@@ -91,13 +94,16 @@ bool expr::operator==(const expr::node_t& lhs, const expr::node_t& rhs) {
     return true;
 }
 
-bool expr::operator!=(const expr::node_t& lhs, const expr::node_t& rhs) {
+bool expr::operator!=(
+    const expr::node_t& lhs,
+    const expr::node_t& rhs
+) noexcept {
     return !(lhs == rhs);
 }
 
 expr::node_ptr expr::make_number_literal_node(
     std::string content,
-    expr::location_t location
+    const expr::location_t& location
 ) {
     return std::unique_ptr<expr::node_t>(
         new expr::node_t{
@@ -111,7 +117,7 @@ expr::node_ptr expr::make_number_literal_node(
 
 expr::node_ptr expr::make_variable_node(
     std::string content,
-    expr::location_t location
+    const expr::location_t& location
 ) {
     return std::unique_ptr<expr::node_t>(
         new expr::node_t{
@@ -126,7 +132,7 @@ expr::node_ptr expr::make_variable_node(
 expr::node_ptr expr::make_unary_operator_node(
     std::string content,
     expr::node_ptr&& operand,
-    expr::location_t location
+    const expr::location_t& location
 ) {
     expr::node_ptr result = std::unique_ptr<expr::node_t>(
         new expr::node_t{
@@ -146,7 +152,7 @@ expr::node_ptr expr::make_binary_operator_node(
     std::string content,
     expr::node_ptr&& left,
     expr::node_ptr&& right,
-    expr::location_t location
+    const expr::location_t& location
 ) {
     expr::node_ptr result = std::unique_ptr<expr::node_t>(
         new expr::node_t{
@@ -166,7 +172,7 @@ expr::node_ptr expr::make_binary_operator_node(
 expr::node_ptr expr::make_function_call_node(
     std::string content,
     std::vector<expr::node_ptr>&& parameters,
-    expr::location_t location
+    const expr::location_t& location
 ) {
     return std::unique_ptr<expr::node_t>(
         new expr::node_t{
@@ -181,7 +187,7 @@ expr::node_ptr expr::make_function_call_node(
 expr::node_ptr expr::make_assignment_node(
     expr::node_ptr&& left,
     expr::node_ptr&& right,
-    expr::location_t location
+    const expr::location_t& location
 ) {
     expr::node_ptr result = std::unique_ptr<expr::node_t>(
         new expr::node_t{
