@@ -58,6 +58,8 @@ namespace expr {
         node_ptr&& right,
         location_t location
     );
+
+    std::string to_expression_string(const node_ptr& root);
 }
 
 std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t kind);

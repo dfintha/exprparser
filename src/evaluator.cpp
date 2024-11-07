@@ -42,76 +42,6 @@ static expr::function_result call_function(
     return function(evaluated, location);
 }
 
-static int get_precedence_score(const expr::node_ptr& node) {
-    switch (node->type) {
-        case expr::node_t::type_t::ASSIGNMENT:
-            return 0;
-        case expr::node_t::type_t::BINARY_OP: {
-            if (node->content == "+" || node->content == "-")
-                return 1;
-            if (node->content == "*" || node->content == "/")
-                return 2;
-            return 3;
-        }
-        case expr::node_t::type_t::FUNCTION_CALL:
-            return 4;
-        case expr::node_t::type_t::UNARY_OP:
-            return 5;
-        case expr::node_t::type_t::NUMBER:
-        case expr::node_t::type_t::VARIABLE:
-            return 6;
-    }
-
-    // Unreachable
-    return 0;
-}
-
-static std::string binary_op_to_expression_string(const expr::node_ptr& node) {
-    const auto left_precedence = get_precedence_score(node->children[0]);
-    const auto right_precedence = get_precedence_score(node->children[1]);
-    const auto parent_precedence = get_precedence_score(node);
-    const bool left_lesser = left_precedence < parent_precedence;
-    const bool right_lesser = right_precedence < parent_precedence;
-    return (left_lesser ? "(" : "")
-        + expr::to_expression_string(node->children[0])
-        + (left_lesser ? ")" : "")
-        + " " + node->content + " "
-        + (right_lesser ? "(" : "")
-        + expr::to_expression_string(node->children[1])
-        + (right_lesser ? ")" : "");
-}
-
-static std::string unary_op_to_expression_string(const expr::node_ptr& node) {
-    const auto& type = node->children[0]->type;
-    const bool child_number = type == expr::node_t::type_t::NUMBER;
-    const bool child_variable = type == expr::node_t::type_t::VARIABLE;
-    const bool child_primary = child_number || child_variable;
-    return node->content
-        + (!child_primary ? "(" : "")
-        + expr::to_expression_string(node->children[0])
-        + (!child_primary ? ")" : "");
-}
-
-static std::string function_call_to_expression_string(
-    const expr::node_ptr& node
-) {
-    std::string result = node->content + "(";
-    bool done = false;
-    auto it = node->children.begin();
-    while (!done) {
-        result += expr::to_expression_string(*it++);
-        done = (it == node->children.end());
-        result += done ? ")" : ", ";
-    }
-    return result;
-}
-
-static std::string assignment_to_expression_string(const expr::node_ptr& node) {
-    auto lhs = to_expression_string(node->children[0]);
-    auto rhs = to_expression_string(node->children[1]);
-    return lhs + " = " + rhs;
-}
-
 static std::optional<double> parse_binary_number(const std::string& content) {
     if (content.substr(0, 2) != "0b")
         return std::nullopt;
@@ -243,23 +173,4 @@ expr::evaluator_result expr::evaluate(
 expr::evaluator_result expr::evaluate_parse_time(const expr::node_ptr& node) {
     expr::symbol_table table;
     return expr::evaluate(node, table, expr::function_table{});
-}
-
-std::string expr::to_expression_string(const expr::node_ptr& root) {
-    switch (root->type) {
-        case expr::node_t::type_t::BINARY_OP:
-            return binary_op_to_expression_string(root);
-        case expr::node_t::type_t::UNARY_OP:
-            return unary_op_to_expression_string(root);
-        case expr::node_t::type_t::NUMBER:
-        case expr::node_t::type_t::VARIABLE:
-            return root->content;
-        case expr::node_t::type_t::FUNCTION_CALL:
-            return function_call_to_expression_string(root);
-        case expr::node_t::type_t::ASSIGNMENT:
-            return assignment_to_expression_string(root);
-    }
-
-    // Unreachable
-    return "";
 }

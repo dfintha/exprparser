@@ -15,8 +15,6 @@ namespace expr {
     );
 
     evaluator_result evaluate_parse_time(const node_ptr& node);
-
-    std::string to_expression_string(const node_ptr& root);
 }
 
 #endif
