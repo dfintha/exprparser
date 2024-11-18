@@ -70,7 +70,7 @@ static std::optional<expr::token_t> extract_single(
             type = expr::token_t::type_t::COMMA;
             break;
         case '=':
-            type = expr::token_t::type_t::EQUALS;
+            type = expr::token_t::type_t::EQUAL_SIGN;
             break;
         default:
             return std::nullopt;

@@ -241,7 +241,7 @@ expr::parser_result expression_parser_impl::parse_assignment() {
         return lhs;
 
     expr::node_ptr expression = std::move(*lhs);
-    while (match({token_type_t::EQUALS})) {
+    while (match({token_type_t::EQUAL_SIGN})) {
         const auto begin = expression->location.begin;
         auto content = previous().content;
 

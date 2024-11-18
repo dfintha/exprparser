@@ -26,8 +26,8 @@ std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
             return stream << "ClosingParenthesis";
         case expr::token_t::type_t::COMMA:
             return stream << "Comma";
-        case expr::token_t::type_t::EQUALS:
-            return stream << "Equals";
+        case expr::token_t::type_t::EQUAL_SIGN:
+            return stream << "EqualSign";
     }
 
     // Unreachable
