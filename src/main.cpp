@@ -67,6 +67,24 @@ void evaluate_and_print(
     }
 }
 
+static std::optional<std::string> find_first_variable(
+    const expr::node_ptr& root,
+    const expr::symbol_table& symbols
+) {
+    if (root->type == expr::node_t::type_t::VARIABLE) {
+        if (!symbols.contains(root->content))
+            return root->content;
+        return std::nullopt;
+    }
+
+    for (const auto& child : root->children) {
+        if (auto found = find_first_variable(child, symbols))
+            return found;
+    }
+
+    return std::nullopt;
+}
+
 static bool process_expression(std::string_view expression) {
     static auto symbols = expr::symbol_table{
         {"pi", 3.141592653589793238},
@@ -86,7 +104,7 @@ static bool process_expression(std::string_view expression) {
         return false;
 
     separator("Parsing");
-    auto parsed = process_and_print(
+    const auto parsed = process_and_print(
         expression,
         "parse tokens",
         expr::parse,
@@ -98,7 +116,7 @@ static bool process_expression(std::string_view expression) {
         return false;
 
     separator("Optimization");
-    auto optimized = process_and_print(
+    const auto optimized = process_and_print(
         expression,
         "optimize expression tree",
         expr::optimize,
@@ -107,11 +125,14 @@ static bool process_expression(std::string_view expression) {
     evaluate_and_print(optimized, "optimized", symbols);
 
     separator("Derivation");
-    auto derived = process_and_print(
+    const auto variable = find_first_variable(*parsed, symbols).value_or("x");
+    std::cout << "Derivative is with respect to '" << variable << "'.\n\n";
+    const auto derived = process_and_print(
         expression,
         "derive expression",
         expr::derive,
-        std::move(*parsed)
+        std::move(*parsed),
+        variable
     );
     evaluate_and_print(derived, "derived", symbols);
 

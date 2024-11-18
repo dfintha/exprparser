@@ -3,7 +3,11 @@
 
 #include <unordered_map>    // std::unordered_map
 
-using derivator_t = expr::derivator_result (*)(const expr::node_ptr&);
+using derivator_t = expr::derivator_result (*)(
+    const expr::node_ptr&,
+    std::string_view
+);
+
 using derivator_table = std::unordered_map<std::string, derivator_t>;
 
 static constexpr expr::location_t empty_location = expr::location_t{
@@ -34,12 +38,18 @@ static void erase_location(expr::node_ptr& node) {
     }
 }
 
-static expr::derivator_result derive_primary(const expr::node_ptr& root) {
+static expr::derivator_result derive_primary(
+    const expr::node_ptr& root,
+    std::string_view variable
+) {
     if (root->type == expr::node_t::type_t::NUMBER)
         return expr::make_number_literal_node("0", empty_location);
 
-    if (root->type == expr::node_t::type_t::VARIABLE)
-        return expr::make_number_literal_node("1", empty_location);
+    if (root->type == expr::node_t::type_t::VARIABLE) {
+        if (root->content == variable)
+            return expr::make_number_literal_node("1", empty_location);
+        return clone_node(root);
+    }
 
     return expr::error{
         .code = expr::error_code::DERIVATOR_GENERAL_ERROR,
@@ -48,8 +58,11 @@ static expr::derivator_result derive_primary(const expr::node_ptr& root) {
     };
 }
 
-static expr::derivator_result derive_unary_op(const expr::node_ptr& root) {
-    auto operand = derive(clone_node(root->children[0]));
+static expr::derivator_result derive_unary_op(
+    const expr::node_ptr& root,
+    std::string_view variable
+) {
+    auto operand = derive(clone_node(root->children[0]), variable);
     if (!operand)
         return operand;
 
@@ -62,12 +75,15 @@ static expr::derivator_result derive_unary_op(const expr::node_ptr& root) {
     );
 }
 
-static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
-    auto left_d = derive(clone_node(root->children[0]));
+static expr::derivator_result derive_binary_op(
+    const expr::node_ptr& root,
+    std::string_view variable
+) {
+    auto left_d = derive(clone_node(root->children[0]), variable);
     if (!left_d)
         return left_d;
 
-    auto right_d = derive(clone_node(root->children[1]));
+    auto right_d = derive(clone_node(root->children[1]), variable);
     if (!right_d)
         return right_d;
 
@@ -220,7 +236,10 @@ static expr::derivator_result derive_binary_op(const expr::node_ptr& root) {
     };
 }
 
-static expr::derivator_result derive_sin(const expr::node_ptr& root) {
+static expr::derivator_result derive_sin(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     std::vector<expr::node_ptr> children;
     children.emplace_back(clone_node(root->children[0]));
 
@@ -231,7 +250,10 @@ static expr::derivator_result derive_sin(const expr::node_ptr& root) {
     );
 }
 
-static expr::derivator_result derive_cos(const expr::node_ptr& root) {
+static expr::derivator_result derive_cos(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     std::vector<expr::node_ptr> children;
     children.emplace_back(clone_node(root->children[0]));
 
@@ -246,7 +268,10 @@ static expr::derivator_result derive_cos(const expr::node_ptr& root) {
     );
 }
 
-static expr::derivator_result derive_tan(const expr::node_ptr& root) {
+static expr::derivator_result derive_tan(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     std::vector<expr::node_ptr> children;
     children.push_back(clone_node(root->children[0]));
 
@@ -267,7 +292,10 @@ static expr::derivator_result derive_tan(const expr::node_ptr& root) {
     );
 }
 
-static expr::derivator_result derive_ctg(const expr::node_ptr& root) {
+static expr::derivator_result derive_ctg(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     std::vector<expr::node_ptr> children;
     children.push_back(clone_node(root->children[0]));
 
@@ -292,7 +320,10 @@ static expr::derivator_result derive_ctg(const expr::node_ptr& root) {
     );
 }
 
-static expr::derivator_result derive_sec(const expr::node_ptr& root) {
+static expr::derivator_result derive_sec(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     std::vector<expr::node_ptr> children_sec;
     children_sec.push_back(clone_node(root->children[0]));
 
@@ -315,7 +346,10 @@ static expr::derivator_result derive_sec(const expr::node_ptr& root) {
     );
 }
 
-static expr::derivator_result derive_csc(const expr::node_ptr& root) {
+static expr::derivator_result derive_csc(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     std::vector<expr::node_ptr> children_csc;
     children_csc.push_back(clone_node(root->children[0]));
 
@@ -342,7 +376,10 @@ static expr::derivator_result derive_csc(const expr::node_ptr& root) {
     );
 }
 
-static expr::derivator_result derive_nonderivables(const expr::node_ptr& root) {
+static expr::derivator_result derive_nonderivables(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     return expr::error{
         .code = expr::error_code::DERIVATOR_FUNCTION_NOT_DERIVABLE,
         .location = root->location,
@@ -350,7 +387,10 @@ static expr::derivator_result derive_nonderivables(const expr::node_ptr& root) {
     };
 }
 
-static expr::derivator_result derive_logarithms(const expr::node_ptr& root) {
+static expr::derivator_result derive_logarithms(
+    const expr::node_ptr& root,
+    std::string_view
+) {
     // The derivative of ln(x) can be simplified to 1/x.
     if (root->content == "ln") {
         return expr::make_binary_operator_node(
@@ -440,10 +480,13 @@ static const derivator_table& function_derivators() {
     return table;
 }
 
-static expr::derivator_result derive_function_call(const expr::node_ptr& root) {
+static expr::derivator_result derive_function_call(
+    const expr::node_ptr& root,
+    std::string_view variable
+) {
     const auto& derivators = function_derivators();
     if (derivators.count(root->content) != 0)
-        return derivators.at(root->content)(root);
+        return derivators.at(root->content)(root, variable);
 
     return expr::error{
         .code = expr::error_code::DERIVATOR_GENERAL_ERROR,
@@ -453,11 +496,17 @@ static expr::derivator_result derive_function_call(const expr::node_ptr& root) {
     };
 }
 
-static expr::derivator_result derive_assignment(const expr::node_ptr& root) {
-    return derive(root->children[1]);
+static expr::derivator_result derive_assignment(
+    const expr::node_ptr& root,
+    std::string_view variable
+) {
+    return derive(root->children[1], variable);
 }
 
-expr::derivator_result expr::derive(const expr::node_ptr& root) {
+expr::derivator_result expr::derive(
+    const expr::node_ptr& root,
+    std::string_view variable
+) {
 #define FOR_NODE(NODE_TYPE, ...)                        \
     case expr::node_t::type_t::NODE_TYPE: {             \
         auto result = __VA_ARGS__;                      \
@@ -467,12 +516,12 @@ expr::derivator_result expr::derive(const expr::node_ptr& root) {
     } break                                             \
 
     switch (root->type) {
-        FOR_NODE(BINARY_OP, derive_binary_op(root));
-        FOR_NODE(UNARY_OP, derive_unary_op(root));
-        FOR_NODE(NUMBER, derive_primary(root));
-        FOR_NODE(VARIABLE, derive_primary(root));
-        FOR_NODE(FUNCTION_CALL, derive_function_call(root));
-        FOR_NODE(ASSIGNMENT, derive_assignment(root));
+        FOR_NODE(BINARY_OP, derive_binary_op(root, variable));
+        FOR_NODE(UNARY_OP, derive_unary_op(root, variable));
+        FOR_NODE(NUMBER, derive_primary(root, variable));
+        FOR_NODE(VARIABLE, derive_primary(root, variable));
+        FOR_NODE(FUNCTION_CALL, derive_function_call(root, variable));
+        FOR_NODE(ASSIGNMENT, derive_assignment(root, variable));
     }
 
 #undef FOR_NODE
