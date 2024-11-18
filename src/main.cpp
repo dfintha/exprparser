@@ -6,6 +6,7 @@
 #include "tokenizer.h"
 #include "version.h"
 
+#include <cfloat>           // DBL_EPSILON
 #include <cstring>          // strdup, std::strlen, std::strncmp
 #include <iostream>         // std::cout
 
@@ -60,7 +61,10 @@ void evaluate_and_print(
 
     auto evaluated = expr::evaluate(*root, symbols, expr::functions());
     if (evaluated.has_value()) {
-        std::cout << "Evaluation result: " << *evaluated << "\n\n";
+        double formatted = *evaluated;
+        if (std::abs(formatted) < DBL_EPSILON)
+            formatted = 0;
+        std::cout << "Evaluation result: " << formatted << "\n\n";
     } else {
         std::cout << "Failed to evaluate: "
                   << evaluated.error().description << "\n\n";
