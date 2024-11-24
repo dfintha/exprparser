@@ -2,54 +2,61 @@
 
 #include <iostream>         // std::ostream
 
-static int get_precedence_score(const expr::node_ptr& node) noexcept {
+enum precedence_t {
+    INVALID_PRECEDENCE = 0,
+    ASSIGNMENT_PRECEDENCE = 1,
+    TERM_PRECEDENCE = 2,
+    FACTOR_PRECEDENCE = 3,
+    POWER_PRECEDENCE = 4,
+    UNARY_PRECEDENCE = 5,
+    PRIMARY_PRECEDENCE = 6
+};
+
+static precedence_t get_precedence_score(const expr::node_ptr& node) noexcept {
     switch (node->type) {
         case expr::node_t::type_t::ASSIGNMENT:
-            return 0;
+            return ASSIGNMENT_PRECEDENCE;
         case expr::node_t::type_t::BINARY_OP: {
             if (node->content == "+" || node->content == "-")
-                return 1;
+                return TERM_PRECEDENCE;
             if (node->content == "*" || node->content == "/")
-                return 2;
-            return 3;
+                return FACTOR_PRECEDENCE;
+            return POWER_PRECEDENCE;
         }
-        case expr::node_t::type_t::FUNCTION_CALL:
-            return 4;
         case expr::node_t::type_t::UNARY_OP:
-            return 5;
+            return UNARY_PRECEDENCE;
+        case expr::node_t::type_t::FUNCTION_CALL:
         case expr::node_t::type_t::NUMBER:
         case expr::node_t::type_t::VARIABLE:
-            return 6;
+            return PRIMARY_PRECEDENCE;
     }
 
     // Unreachable
-    return 0;
+    return INVALID_PRECEDENCE;
 }
 
 static std::string binary_op_to_expression_string(const expr::node_ptr& node) {
     const auto left_precedence = get_precedence_score(node->children[0]);
     const auto right_precedence = get_precedence_score(node->children[1]);
     const auto parent_precedence = get_precedence_score(node);
-    const bool left_lesser = left_precedence < parent_precedence;
-    const bool right_lesser = right_precedence < parent_precedence;
-    return (left_lesser ? "(" : "")
+    const bool left_parentheses = left_precedence < parent_precedence;
+    const bool right_parentheses = right_precedence < parent_precedence;
+    return (left_parentheses ? "(" : "")
         + expr::to_expression_string(node->children[0])
-        + (left_lesser ? ")" : "")
+        + (left_parentheses ? ")" : "")
         + " " + node->content + " "
-        + (right_lesser ? "(" : "")
+        + (right_parentheses ? "(" : "")
         + expr::to_expression_string(node->children[1])
-        + (right_lesser ? ")" : "");
+        + (right_parentheses ? ")" : "");
 }
 
 static std::string unary_op_to_expression_string(const expr::node_ptr& node) {
-    const auto& type = node->children[0]->type;
-    const bool child_number = type == expr::node_t::type_t::NUMBER;
-    const bool child_variable = type == expr::node_t::type_t::VARIABLE;
-    const bool child_primary = child_number || child_variable;
+    const auto child_precedence = get_precedence_score(node->children[0]);
+    const bool parentheses = child_precedence < UNARY_PRECEDENCE;
     return node->content
-        + (!child_primary ? "(" : "")
+        + (parentheses ? "(" : "")
         + expr::to_expression_string(node->children[0])
-        + (!child_primary ? ")" : "");
+        + (parentheses ? ")" : "");
 }
 
 static std::string function_call_to_expression_string(
