@@ -1,14 +1,9 @@
 #include "optimizer.h"
 #include "evaluator.h"
+#include "utility.h"
 
-#include <cfloat>           // DBL_EPSILON
-#include <cmath>            // std::fabs
 #include <optional>         // std::optional
 #include <sstream>          // std::stringstream, iostream, iomanip
-
-static bool is_near(double lhs, double rhs) noexcept {
-    return std::fabs(lhs - rhs) <= DBL_EPSILON;
-}
 
 static bool are_all_children_numbers(
     const std::vector<expr::node_ptr>& children
@@ -39,7 +34,7 @@ static std::optional<expr::optimizer_result> make_optimized_addition(
         const auto value = expr::evaluate_parse_time(original->children[i]);
 
         // Addition of 0 is a no-op both ways.
-        if (value && is_near(*value, 0))
+        if (value && expr::is_near(*value, 0))
             return std::move(original->children[1 - i]);
     }
     return std::nullopt;
@@ -57,11 +52,11 @@ static std::optional<expr::optimizer_result> make_optimized_subtraction(
     const auto value_1 = expr::evaluate_parse_time(original->children[1]);
 
     // Subtraction of 0 is a no-op.
-    if (value_1 && is_near(*value_1, 0))
+    if (value_1 && expr::is_near(*value_1, 0))
         return std::move(original->children[0]);
 
     // Subtraction from 0 is a sign change.
-    if (value_0 && is_near(*value_0, 0)) {
+    if (value_0 && expr::is_near(*value_0, 0)) {
         return expr::make_unary_operator_node(
             "-",
             std::move(original->children[1]),
@@ -93,15 +88,15 @@ static std::optional<expr::optimizer_result> make_optimized_multiplication(
         const auto value = expr::evaluate_parse_time(original->children[i]);
 
         // Multiplication with 0 results in 0.
-        if (value && is_near(*value, 0))
+        if (value && expr::is_near(*value, 0))
             return expr::make_number_literal_node("0", location);
 
         // Multiplication with 1 is a no-op (both ways).
-        if (value && is_near(*value, 1))
+        if (value && expr::is_near(*value, 1))
             return std::move(original->children[1 - i]);
 
         // Multiplication with -1 is a sign change (both ways).
-        if (value && is_near(*value, -1)) {
+        if (value && expr::is_near(*value, -1)) {
             return expr::make_unary_operator_node(
                 "-",
                 std::move(original->children[1 - i]),
@@ -126,15 +121,15 @@ static std::optional<expr::optimizer_result> make_optimized_division(
     const auto value_1 = expr::evaluate_parse_time(original->children[1]);
 
     // Division of 0 is always 0.
-    if (value_0 && is_near(*value_0, 0))
+    if (value_0 && expr::is_near(*value_0, 0))
         return expr::make_number_literal_node("0", location);
 
     // Division with 1 is a no-op.
-    if (value_1 && is_near(*value_1, 1))
+    if (value_1 && expr::is_near(*value_1, 1))
         return std::move(original->children[0]);
 
     // Division with -1 is a sign change.
-    if (value_1 && is_near(*value_1, -1)) {
+    if (value_1 && expr::is_near(*value_1, -1)) {
         return expr::make_unary_operator_node(
             "-",
             std::move(original->children[0]),
@@ -152,11 +147,11 @@ static std::optional<expr::optimizer_result> make_optimized_exponentiation(
     const auto value = expr::evaluate_parse_time(original->children[1]);
 
     // The 0th power of every number is 1.
-    if (value && is_near(*value, 0))
+    if (value && expr::is_near(*value, 0))
         return expr::make_number_literal_node("1", location);
 
     // The 1st power of every number is itself.
-    if (value && is_near(*value, 1))
+    if (value && expr::is_near(*value, 1))
         return std::move(original->children[0]);
 
     return std::nullopt;

@@ -1,4 +1,5 @@
 #include "evaluator.h"
+#include "utility.h"
 
 #include <algorithm>        // std::transform
 #include <cmath>            // std::fmod, std::pow
@@ -6,61 +7,7 @@
 #include <iterator>         // std::back_inserter
 #include <optional>         // std::optional
 
-using namespace std::literals;
-
-static expr::function_result call_function(
-    const std::string& name,
-    const expr::function_t& function,
-    const expr::location_t& location,
-    const std::vector<expr::node_ptr>& parameters,
-    expr::symbol_table& symbols,
-    const expr::function_table& functions
-) {
-    bool failed = false;
-    std::vector<double> evaluated;
-    std::transform(
-        parameters.begin(),
-        parameters.end(),
-        std::back_inserter(evaluated),
-        [&] (const expr::node_ptr& unevaluated) {
-            if (failed)
-                return 0.0;
-            if (auto result = expr::evaluate(unevaluated, symbols, functions))
-                return *result;
-            failed = true;
-            return 0.0;
-        }
-    );
-    if (failed) {
-        return expr::error{
-            .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
-            .location = location,
-            .description = "Failed to evaluate function arguments for '"s +
-                           name + "()'."
-        };
-    }
-    return function(evaluated, location);
-}
-
-static std::optional<double> parse_binary_number(const std::string& content) {
-    if (content.substr(0, 2) != "0b")
-        return std::nullopt;
-
-    return double(std::strtol(content.substr(2).c_str(), nullptr, 2));
-}
-
-static std::optional<double> parse_octal_number(const std::string& content) {
-    if (content.length() == 0 || content[0] != '0')
-        return std::nullopt;
-
-    auto valid_octal_char = [](char c) { return (c >= '0' && c <= '7'); };
-    if (!std::all_of(content.begin(), content.end(), valid_octal_char))
-        return std::nullopt;
-
-    return double(std::strtol(content.substr(1).c_str(), nullptr, 8));
-}
-
-expr::evaluator_result expr::evaluate(
+static expr::evaluator_result evaluate_binary_operator(
     const expr::node_ptr& node,
     expr::symbol_table& symbols,
     const expr::function_table& functions
@@ -75,90 +22,162 @@ expr::evaluator_result expr::evaluate(
         {"^", [](double lhs, double rhs) { return std::pow(lhs, rhs); }},
     };
 
+    const auto left = expr::evaluate(node->children[0], symbols, functions);
+    const auto right = expr::evaluate(node->children[1], symbols, functions);
+    if (!left || !right) {
+        return expr::error{
+            .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
+            .location = node->location,
+            .description = "Failed to evaluate operand."
+        };
+    }
+
+    if (node->content == "/" && expr::is_near(*right, 0)) {
+        return expr::error{
+            .code = expr::error_code::EVALUATOR_DIVISION_BY_ZERO,
+            .location = node->children[1]->location,
+            .description = "Division by zero."
+        };
+    }
+
+    const auto& operator_fn = binary.at(node->content);
+    return operator_fn(*left, *right);
+}
+
+static expr::evaluator_result evaluate_unary_operator(
+    const expr::node_ptr& node,
+    expr::symbol_table& symbols,
+    const expr::function_table& functions
+) {
     using unary_operator = std::function<double(double)>;
     static const std::unordered_map<std::string, unary_operator> unary = {
         {"+", [](double operand) { return operand; }},
         {"-", [](double operand) { return -1 * operand; }},
     };
 
+    const auto operand = expr::evaluate(node->children[0], symbols, functions);
+    if (operand.has_value()) {
+        const auto& operator_fn = unary.at(node->content);
+        return operator_fn(*operand);
+    }
+
+    return expr::error{
+        .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
+        .location = node->location,
+        .description = "Failed to evaluate operand."
+    };
+}
+
+static expr::evaluator_result evaluate_number_literal(
+    const expr::node_ptr& node
+) {
+    if (node->content.substr(0, 2) == "0b")
+        return double(std::strtol(node->content.substr(2).c_str(), nullptr, 2));
+
+    if (node->content.length() == 0 || node->content[0] != '0')
+        return std::strtod(node->content.c_str(), nullptr);
+
+    auto octal_char = [](char c) { return (c >= '0' && c <= '7'); };
+    if (!std::all_of(node->content.begin(), node->content.end(), octal_char)) {
+        return expr::error{
+            .code = expr::EVALUATOR_INVALID_NUMBER_LITERAL,
+            .location = node->location,
+            .description = "Invalid numeric literal '" + node->content + "'."
+        };
+    }
+
+    return double(std::strtol(node->content.substr(1).c_str(), nullptr, 8));
+}
+
+static expr::evaluator_result evaluate_variable_reference(
+    const expr::node_ptr& node,
+    const expr::symbol_table& symbols
+) {
+    if (symbols.find(node->content) == symbols.end()) {
+        return expr::error{
+            .code = expr::error_code::EVALUATOR_UNDEFINED_VARIABLE,
+            .location = node->location,
+            .description = "Undefined variable '" + node->content + "'."
+        };
+    }
+    return symbols.at(node->content);
+}
+
+static expr::evaluator_result evaluate_function_call(
+    const expr::node_ptr& node,
+    expr::symbol_table& symbols,
+    const expr::function_table& functions
+) {
+    if (functions.find(node->content) == functions.end()) {
+        const auto& where = node->location.begin;
+        return expr::error{
+            .code = expr::error_code::EVALUATOR_UNDEFINED_FUNCTION,
+            .location = expr::location_t{
+                .begin = where,
+                .end = where + node->content.length() - 1
+            },
+            .description = "Undefined function '" + node->content + "'."
+        };
+    }
+
+    const auto& implementation = functions.at(node->content).implementation;
+
+    bool failed = false;
+    std::vector<double> evaluated;
+    std::transform(
+        node->children.begin(),
+        node->children.end(),
+        std::back_inserter(evaluated),
+        [&] (const expr::node_ptr& unevaluated) {
+            if (failed)
+                return 0.0;
+            if (auto result = expr::evaluate(unevaluated, symbols, functions))
+                return *result;
+            failed = true;
+            return 0.0;
+        }
+    );
+
+    if (failed) {
+        return expr::error{
+            .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_ARGUMENTS,
+            .location = node->location,
+            .description = "Failed to evaluate function arguments for '" +
+                           node->content + "()'."
+        };
+    }
+
+    return implementation(evaluated, node->location);
+}
+
+static expr::evaluator_result evaluate_assignment(
+    const expr::node_ptr& node,
+    expr::symbol_table& symbols,
+    const expr::function_table& functions
+) {
+    auto result = expr::evaluate(node->children[1], symbols, functions);
+    symbols[node->children[0]->content] = result;
+    return result;
+}
+
+expr::evaluator_result expr::evaluate(
+    const expr::node_ptr& node,
+    expr::symbol_table& symbols,
+    const expr::function_table& functions
+) {
     switch (node->type) {
-        case expr::node_t::type_t::BINARY_OP: {
-            const auto left = expr::evaluate(
-                node->children[0],
-                symbols,
-                functions
-            );
-            const auto right = expr::evaluate(
-                node->children[1],
-                symbols,
-                functions
-            );
-            if (!left || !right) {
-                return expr::error{
-                    .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
-                    .location = node->location,
-                    .description = "Failed to evaluate operand."
-                };
-            }
-            const auto& f = binary.at(node->content);
-            return f(*left, *right);
-        }
-        case expr::node_t::type_t::UNARY_OP: {
-            const auto operand = expr::evaluate(
-                node->children[0],
-                symbols,
-                functions
-            );
-            if (operand.has_value()) {
-                const auto& f = unary.at(node->content);
-                return f(*operand);
-            }
-            return expr::error{
-                .code = expr::error_code::EVALUATOR_FAILED_TO_EVALUATE_OPERAND,
-                .location = node->location,
-                .description = "Failed to evaluate operand."
-            };
-        }
-        case expr::node_t::type_t::NUMBER: {
-            if (auto bin = parse_binary_number(node->content))
-                return *bin;
-            if (auto oct = parse_octal_number(node->content))
-                return *oct;
-            return std::strtod(node->content.c_str(), nullptr);
-        }
+        case expr::node_t::type_t::BINARY_OP:
+            return evaluate_binary_operator(node, symbols, functions);
+        case expr::node_t::type_t::UNARY_OP:
+            return evaluate_unary_operator(node, symbols, functions);
+        case expr::node_t::type_t::NUMBER:
+            return evaluate_number_literal(node);
         case expr::node_t::type_t::VARIABLE:
-            if (symbols.find(node->content) == symbols.end()) {
-                return expr::error{
-                    .code = expr::error_code::EVALUATOR_UNDEFINED_VARIABLE,
-                    .location = node->location,
-                    .description = "Undefined variable '" + node->content + "'."
-                };
-            }
-            return symbols.at(node->content);
+            return evaluate_variable_reference(node, symbols);
         case expr::node_t::type_t::FUNCTION_CALL:
-            if (functions.find(node->content) == functions.end()) {
-                const auto& where = node->location.begin;
-                return expr::error{
-                    .code = expr::error_code::EVALUATOR_UNDEFINED_FUNCTION,
-                    .location = expr::location_t{
-                        .begin = where,
-                        .end = where + node->content.length() - 1
-                    },
-                    .description = "Undefined function '"s + node->content + "'."
-                };
-            }
-            return call_function(
-                node->content,
-                functions.at(node->content).implementation,
-                node->location,
-                node->children,
-                symbols,
-                functions
-            );
+            return evaluate_function_call(node, symbols, functions);
         case expr::node_t::type_t::ASSIGNMENT:
-            auto result = expr::evaluate(node->children[1], symbols, functions);
-            symbols[node->children[0]->content] = result;
-            return result;
+            return evaluate_assignment(node, symbols, functions);
     }
 
     // Unreachable
