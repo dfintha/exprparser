@@ -20,6 +20,8 @@ namespace expr {
             VARIABLE,
             FUNCTION_CALL,
             ASSIGNMENT,
+            UNIT,
+            UNIT_APPLICATION,
         };
 
         type_t type;
@@ -62,6 +64,17 @@ namespace expr {
     node_ptr make_assignment_node(
         node_ptr&& left,
         node_ptr&& right,
+        const location_t& location
+    );
+
+    node_ptr make_unit_node(
+        std::string content,
+        const location_t& location
+    );
+
+    node_ptr make_unit_application_node(
+        node_ptr&& subexpression,
+        node_ptr&& unit,
         const location_t& location
     );
 

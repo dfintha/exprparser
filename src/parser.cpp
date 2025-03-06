@@ -11,6 +11,7 @@ public:
 private:
     expr::parser_result parse_function_call();
     expr::parser_result parse_primary();
+    expr::parser_result parse_unit();
     expr::parser_result parse_unary();
     expr::parser_result parse_power();
     expr::parser_result parse_factor();
@@ -101,13 +102,13 @@ expr::parser_result expression_parser_impl::parse_primary() {
     }
 
     if (match({token_type_t::IDENTIFIER})) {
-        if (_position->type != token_type_t::OPENING_PARENTHESIS) {
-            return expr::make_variable_node(
-                previous().content,
-                previous().location
-            );
-        }
-        return parse_function_call();
+        if (_position->type == token_type_t::OPENING_PARENTHESIS)
+            return parse_function_call();
+
+        return expr::make_variable_node(
+            previous().content,
+            previous().location
+        );
     }
 
     if (match({token_type_t::OPENING_PARENTHESIS})) {
@@ -137,8 +138,32 @@ expr::parser_result expression_parser_impl::parse_primary() {
     };
 }
 
+expr::parser_result expression_parser_impl::parse_unit() {
+    auto subexpression = parse_primary();
+    if (!subexpression)
+        return subexpression;
+
+    if (match({token_type_t::UNIT})) {
+        const auto& unit = previous();
+        return expr::make_unit_application_node(
+            std::move(*subexpression),
+            expr::make_unit_node(
+                unit.content,
+                unit.location
+            ),
+            expr::location_t{
+                .begin = (*subexpression)->location.begin,
+                .end = unit.location.end,
+            }
+        );
+    }
+
+    return subexpression;
+}
+
 expr::parser_result expression_parser_impl::parse_unary() {
     if (match({token_type_t::PLUS, token_type_t::MINUS})) {
+        const auto content = previous().content;
         const auto begin = previous().location.begin;
 
         auto subexpression = parse_unary();
@@ -146,12 +171,12 @@ expr::parser_result expression_parser_impl::parse_unary() {
             return subexpression;
 
         return expr::make_unary_operator_node(
-            previous().content,
+            content,
             std::move(*subexpression),
             expr::location_t{begin, previous().location.end}
         );
     }
-    return parse_primary();
+    return parse_unit();
 }
 
 expr::parser_result expression_parser_impl::parse_power() {

@@ -4,6 +4,7 @@
 #include <cctype>           // std::isalpha, std::isdigit, std::isxdigit
 #include <cstring>          // std::strlen
 #include <optional>         // std::optional, std::nullopt
+#include <unordered_set>    // std::unordered_set
 
 static bool is_valid_numeric_part(
     const std::string& content,
@@ -79,15 +80,21 @@ static std::optional<expr::token_t> extract_single(
     return expr::token_t{type, std::string{current}, {location, location + 1}};
 }
 
-static expr::token_t extract_identifier(
+static expr::token_t extract_word(
     std::string&& content,
     size_t location
 ) {
+    static const std::unordered_set<std::string_view> units = {
+        "mm", "cm", "m", "km", "rad", "deg"
+    };
+
+    auto type = units.contains(content) ? expr::token_t::type_t::UNIT
+                                        : expr::token_t::type_t::IDENTIFIER;
     const size_t length = content.length();
     return expr::token_t{
-        expr::token_t::type_t::IDENTIFIER,
-        std::move(content),
-        {location, location + length}
+        .type = type,
+        .content = std::move(content),
+        .location = {location, location + length}
     };
 }
 
@@ -125,7 +132,7 @@ static expr::tokenizer_result tokenize(const char *expression, size_t length) {
                     content += current;
                 } else {
                     result.push_back(
-                        extract_identifier(std::move(content), location)
+                        extract_word(std::move(content), location)
                     );
                     state = state_t::NORMAL;
                     --i;

@@ -21,7 +21,8 @@ namespace expr {
             OPENING_PARENTHESIS,
             CLOSING_PARENTHESIS,
             COMMA,
-            EQUAL_SIGN
+            EQUAL_SIGN,
+            UNIT
         };
 
         type_t type;

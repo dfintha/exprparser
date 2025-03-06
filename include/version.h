@@ -14,7 +14,7 @@ namespace expr {
     static constexpr const char *program_name = "exprparser";
     static constexpr const version_t program_version = {
         .major = 0,
-        .minor = 2,
+        .minor = 3,
         .revision = 0
     };
 

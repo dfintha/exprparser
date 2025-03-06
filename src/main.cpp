@@ -61,9 +61,9 @@ void evaluate_and_print(
 
     auto evaluated = expr::evaluate(*root, symbols, expr::functions());
     if (evaluated.has_value()) {
-        double formatted = *evaluated;
-        if (std::abs(formatted) < DBL_EPSILON)
-            formatted = 0;
+        auto formatted = *evaluated;
+        if (std::abs(formatted.value) < DBL_EPSILON)
+            formatted.value = 0;
         std::cout << "Evaluation result: " << formatted << "\n\n";
     } else {
         std::cout << "Failed to evaluate: "
@@ -91,8 +91,8 @@ static std::optional<std::string> find_first_variable(
 
 static bool process_expression(std::string_view expression) {
     static auto symbols = expr::symbol_table{
-        {"pi", 3.141592653589793238},
-        {"e", 2.718281828459045235}
+        {"pi", expr::make_scalar(3.141592653589793238)},
+        {"e", expr::make_scalar(2.718281828459045235)}
     };
 
     separator("Tokenization");
@@ -145,11 +145,10 @@ static bool process_expression(std::string_view expression) {
 
 static void print_builtins() {
     std::cout << "Available built-in functions:\n";
-    std::cout << "    ";
     for (const auto& [_, definition] : expr::functions()) {
-        std::cout << definition.signature << ' ';
+        std::cout << "  " << definition.signature << '\n';
     }
-    std::cout << "\n\n";
+    std::cout << '\n';
 }
 
 static void initialize_gnu_readline() {

@@ -500,7 +500,30 @@ static expr::derivator_result derive_assignment(
     const expr::node_ptr& root,
     std::string_view variable
 ) {
-    return derive(root->children[1], variable);
+    return expr::derive(root->children[1], variable);
+}
+
+static expr::derivator_result derive_unit_application(
+    const expr::node_ptr& root,
+    std::string_view variable
+) {
+    auto subexpression = expr::derive(root->children[0], variable);
+    if (!subexpression)
+        return subexpression;
+
+    return expr::make_unit_application_node(
+        std::move(*subexpression),
+        clone_node(root->children[1]),
+        empty_location
+    );
+}
+
+static expr::derivator_result derivator_unit_unreachable() {
+    return expr::error{
+        .code = expr::error_code::DERIVATOR_GENERAL_ERROR,
+        .location = {},
+        .description = "The code path for deriving units shall not be reached."
+    };
 }
 
 expr::derivator_result expr::derive(
@@ -522,6 +545,8 @@ expr::derivator_result expr::derive(
         FOR_NODE(VARIABLE, derive_primary(root, variable));
         FOR_NODE(FUNCTION_CALL, derive_function_call(root, variable));
         FOR_NODE(ASSIGNMENT, derive_assignment(root, variable));
+        FOR_NODE(UNIT, derivator_unit_unreachable());
+        FOR_NODE(UNIT_APPLICATION, derive_unit_application(root, variable));
     }
 
 #undef FOR_NODE

@@ -2,16 +2,17 @@
 #define EXPRPARSER_FUNCTIONS_HEADER
 
 #include "location.h"
+#include "quantity.h"
 #include "result.h"
 
 #include <unordered_map>    // std::unordered_map
 #include <vector>           // std::vector
 
 namespace expr {
-    using function_result = result<double, error>;
+    using function_result = result<quantity, error>;
 
     using function_t = function_result (*)(
-        const std::vector<double>&,
+        const std::vector<quantity>&,
         const location_t&
     );
 

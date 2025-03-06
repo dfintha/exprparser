@@ -3,10 +3,11 @@
 
 #include "functions.h"
 #include "node.h"
+#include "quantity.h"
 
 namespace expr {
     using evaluator_result = function_result;
-    using symbol_table = std::unordered_map<std::string, double>;
+    using symbol_table = std::unordered_map<std::string, quantity>;
 
     evaluator_result evaluate(
         const node_ptr& node,

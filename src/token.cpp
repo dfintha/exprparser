@@ -28,6 +28,8 @@ std::ostream& operator<<(std::ostream& stream, expr::token_t::type_t type) {
             return stream << "Comma";
         case expr::token_t::type_t::EQUAL_SIGN:
             return stream << "EqualSign";
+        case expr::token_t::type_t::UNIT:
+            return stream << "Unit";
     }
 
     // Unreachable

@@ -28,6 +28,8 @@ static precedence_t get_precedence_score(const expr::node_ptr& node) noexcept {
         case expr::node_t::type_t::FUNCTION_CALL:
         case expr::node_t::type_t::NUMBER:
         case expr::node_t::type_t::VARIABLE:
+        case expr::node_t::type_t::UNIT:
+        case expr::node_t::type_t::UNIT_APPLICATION:
             return PRIMARY_PRECEDENCE;
     }
 
@@ -71,6 +73,13 @@ static std::string function_call_to_expression_string(
         result += done ? ")" : ", ";
     }
     return result;
+}
+
+static std::string unit_application_to_expression_string(
+    const expr::node_ptr& node
+) {
+    return expr::to_expression_string(node->children[0]) + " " +
+           expr::to_expression_string(node->children[1]);
 }
 
 static std::string assignment_to_expression_string(const expr::node_ptr& node) {
@@ -211,6 +220,40 @@ expr::node_ptr expr::make_assignment_node(
     return result;
 }
 
+expr::node_ptr expr::make_unit_node(
+    std::string content,
+    const expr::location_t& location
+) {
+    return std::unique_ptr<expr::node_t>(
+        new expr::node_t{
+            .type = expr::node_t::type_t::UNIT,
+            .content = std::move(content),
+            .children = {},
+            .location = location
+        }
+    );
+}
+
+expr::node_ptr expr::make_unit_application_node(
+    expr::node_ptr&& subexpression,
+    expr::node_ptr&& unit,
+    const expr::location_t& location
+) {
+    expr::node_ptr result = std::unique_ptr<expr::node_t>(
+        new expr::node_t{
+            .type = expr::node_t::type_t::UNIT_APPLICATION,
+            .content = "",
+            .children = {},
+            .location = location
+        }
+    );
+
+    result->children.push_back(std::move(subexpression));
+    result->children.push_back(std::move(unit));
+
+    return result;
+}
+
 std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
     switch (type) {
         case expr::node_t::type_t::BINARY_OP:
@@ -225,6 +268,10 @@ std::ostream& operator<<(std::ostream& stream, expr::node_t::type_t type) {
             return stream << "FunctionCall";
         case expr::node_t::type_t::ASSIGNMENT:
             return stream << "Assignment";
+        case expr::node_t::type_t::UNIT:
+            return stream << "Unit";
+        case expr::node_t::type_t::UNIT_APPLICATION:
+            return stream << "UnitApplication";
     }
 
     // Unreachable
@@ -244,6 +291,10 @@ std::string expr::to_expression_string(const expr::node_ptr& root) {
             return function_call_to_expression_string(root);
         case expr::node_t::type_t::ASSIGNMENT:
             return assignment_to_expression_string(root);
+        case expr::node_t::type_t::UNIT:
+            return root->content;
+        case expr::node_t::type_t::UNIT_APPLICATION:
+            return unit_application_to_expression_string(root);
     }
 
     // Unreachable
