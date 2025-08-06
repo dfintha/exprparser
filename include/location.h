@@ -8,6 +8,8 @@ namespace expr {
     struct location_t {
         std::size_t begin;
         std::size_t end;
+
+        bool operator==(const location_t&) const = default;
     };
 }
 

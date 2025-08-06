@@ -302,11 +302,16 @@ std::string expr::to_expression_string(const expr::node_ptr& root) {
 }
 
 std::ostream& operator<<(std::ostream& stream, const expr::node_ptr& node) {
+    static constexpr auto empty_location = expr::location_t{
+        .begin = 0,
+        .end = 0,
+    };
+
     static std::string indent = "";
-    stream << indent << node->type
-           << "('" << node->content
-           << "'@" << node->location
-           << ')' << std::endl;
+    stream << indent << node->type << "('" << node->content << '\'';
+    if (node->location != empty_location)
+        stream << '@' << node->location;
+    stream << ')' << std::endl;
     indent += "  ";
     for (const auto& child : node->children) {
         stream << child;
