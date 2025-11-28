@@ -139,14 +139,15 @@ static expr::evaluator_result evaluate_variable_reference(
     const expr::node_ptr& node,
     const expr::symbol_table& symbols
 ) {
-    if (symbols.find(node->content) == symbols.end()) {
+    auto where = symbols.find(node->content);
+    if (where == symbols.end()) {
         return expr::error{
             .code = expr::error_code::EVALUATOR_UNDEFINED_VARIABLE,
             .location = node->location,
             .description = "Undefined variable '" + node->content + "'."
         };
     }
-    return symbols.at(node->content);
+    return where->second;
 }
 
 static expr::evaluator_result evaluate_function_call(
@@ -154,19 +155,20 @@ static expr::evaluator_result evaluate_function_call(
     expr::symbol_table& symbols,
     const expr::function_table& functions
 ) {
-    if (functions.find(node->content) == functions.end()) {
-        const auto& where = node->location.begin;
+    auto where = functions.find(node->content);
+    if (where == functions.end()) {
+        const auto& location = node->location.begin;
         return expr::error{
             .code = expr::error_code::EVALUATOR_UNDEFINED_FUNCTION,
             .location = expr::location_t{
-                .begin = where,
-                .end = where + node->content.length() - 1
+                .begin = location,
+                .end = location + node->content.length() - 1
             },
             .description = "Undefined function '" + node->content + "'."
         };
     }
 
-    const auto& implementation = functions.at(node->content).implementation;
+    const auto& implementation = where->second.implementation;
 
     bool failed = false;
     std::vector<expr::quantity> evaluated;
